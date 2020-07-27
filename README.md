@@ -1,4 +1,5 @@
 # Hybrid implementation of Jacobi algorithm
+(Work in progress!)
 
 ## Summary
 This is an MPI parallel implementation of the Jacobi algorithm that is meant to exploit both distributed and shared memory.
