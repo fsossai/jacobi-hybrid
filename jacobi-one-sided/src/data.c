@@ -5,43 +5,42 @@
 
 void read_input(FILE* stream, instance_t *instance)
 {
-	fscanf(stream, "%i", &instance->domain_x_size);
-	fscanf(stream, "%i", &instance->domain_y_size);
-	fscanf(stream, "%i", &instance->domain_z_size);
+	for (int i = 0; i < DOMAIN_DIM; i++)
+		fscanf(stream, "%i", &instance->domain_sizes[i]);
 	fscanf(stream, "%lf", &instance->alpha);
 	fscanf(stream, "%lf", &instance->relaxation);
 	fscanf(stream, "%lf", &instance->tolerance);
 	fscanf(stream, "%i", &instance->max_iterations);
 
 	#ifdef _DEBUG
-	printf("dims\t\t: (%i,%i,%i)\n", instance->domain_x_size, instance->domain_y_size, instance->domain_z_size);
+	printf("dims\t\t: (%i,%i,%i)\n",
+		instance->domain_sizes[0], instance->domain_sizes[1], instance->domain_sizes[2]);
 	printf("alpha\t\t: %lf\n", instance->alpha);
 	printf("relaxation\t: %lf\n", instance->relaxation);
 	printf("tolerance\t: %lf\n", instance->tolerance);
 	printf("iterations\t: %i\n", instance->max_iterations);
-	#endif // DEBUG
+	#endif // _DEBUG
 
 }
 
 void broadcast_input_data(instance_t *instance)
 {
-	MPI_Aint displacements[7];
-	displacements[0] = (MPI_Aint)offsetof(instance_t, domain_x_size);
-	displacements[1] = (MPI_Aint)offsetof(instance_t, domain_y_size);
-	displacements[2] = (MPI_Aint)offsetof(instance_t, domain_z_size);
-	displacements[3] = (MPI_Aint)offsetof(instance_t, alpha);
-	displacements[4] = (MPI_Aint)offsetof(instance_t, relaxation);
-	displacements[5] = (MPI_Aint)offsetof(instance_t, tolerance);
-	displacements[6] = (MPI_Aint)offsetof(instance_t, max_iterations);
+	MPI_Aint displacements[5];
+	displacements[0] = (MPI_Aint)offsetof(instance_t, domain_sizes);
+	displacements[1] = (MPI_Aint)offsetof(instance_t, alpha);
+	displacements[2] = (MPI_Aint)offsetof(instance_t, relaxation);
+	displacements[3] = (MPI_Aint)offsetof(instance_t, tolerance);
+	displacements[4] = (MPI_Aint)offsetof(instance_t, max_iterations);
 
-	int block_lengths[7];
-	for (int i = 0; i < 7; i++)
+	int block_lengths[5];
+	block_lengths[0] = DOMAIN_DIM;
+	for (int i = 1; i < 5; i++)
 		block_lengths[i] = 1;
 
-	MPI_Datatype types[7] = { MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
+	MPI_Datatype types[5] = { MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
 
 	MPI_Datatype parameters_struct;
-	MPI_Type_create_struct(7, block_lengths, displacements, types, &parameters_struct);
+	MPI_Type_create_struct(5, block_lengths, displacements, types, &parameters_struct);
 	MPI_Type_commit(&parameters_struct);
 
 	MPI_Bcast(instance, 1, parameters_struct, 0, MPI_COMM_WORLD);
@@ -51,25 +50,25 @@ void broadcast_input_data(instance_t *instance)
 
 void initialize_problem(instance_t *instance)
 {
-	const int LX = instance->offset_x;
-	const int LY = instance->offset_y;
-	const int LZ = instance->offset_z;
-	const int NX = instance->subdomain_x_size;
-	const int NY = instance->subdomain_y_size;
-	const int NZ = instance->subdomain_z_size;
+	const int LX = instance->subdomain_offsets[0];
+	const int LY = instance->subdomain_offsets[1];
+	const int LZ = instance->subdomain_offsets[2];
+	const int NX = instance->subdomain_sizes[0];
+	const int NY = instance->subdomain_sizes[1];
+	const int NZ = instance->subdomain_sizes[2];
 	const int N = NX * NY * NZ;
 	
 	instance->U = (double*)calloc(N, sizeof(double));
 	instance->F = (double*)malloc(N * sizeof(double));
-	instance->dx = 2.0 / (instance->domain_x_size - 1);
-	instance->dy = 2.0 / (instance->domain_y_size - 1);
-	instance->dz = 2.0 / (instance->domain_z_size - 1);
+	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1);
+	instance->dx[1] = 2.0 / (instance->domain_sizes[1] - 1);
+	instance->dx[2] = 2.0 / (instance->domain_sizes[2] - 1);
 
 	double* U = instance->U;
 	double* F = instance->F;
-	const double dx = instance->dx;
-	const double dy = instance->dy;
-	const double dz = instance->dz;
+	const double dx = instance->dx[0];
+	const double dy = instance->dx[1];
+	const double dz = instance->dx[2];
 	const double m_alpha = - instance->alpha;
 
 	double xval, yval, zval;
@@ -83,14 +82,12 @@ void initialize_problem(instance_t *instance)
 			for (int z = LZ, k=0; k<NZ; z++, k++)
 			{
 				zval = -1.0 + dz * z;
-				F[INDEX(i, j, k, NY, NZ)] =
+				F[INDEX3D(i, j, k, NY, NZ)] =
 					m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval) * (1.0 - zval * zval) +
 					2.0 * (-2.0 + xval * xval + yval * yval + zval * zval);
 			}
 		}
 	}
-
-	
 }
 
 void close_problem(instance_t* instance)
@@ -103,15 +100,15 @@ void close_problem(instance_t* instance)
 
 void print_subdomain(double* mat, instance_t *instance, char *format)
 {
-	for (int i = 0; i<instance->subdomain_x_size; i++)
+	for (int i = 0; i<instance->subdomain_sizes[0]; i++)
 	{
-		for (int j = 0; j < instance->subdomain_y_size; j++)
+		for (int j = 0; j < instance->subdomain_sizes[1]; j++)
 		{
-			for (int k = 0; k < instance->subdomain_z_size; k++)
+			for (int k = 0; k < instance->subdomain_sizes[2]; k++)
 				printf(format,
-					mat[INDEX(i, j, k,
-						instance->subdomain_y_size,
-						instance->subdomain_z_size)]);
+					mat[INDEX3D(i, j, k,
+						instance->subdomain_sizes[1],
+						instance->subdomain_sizes[2])]);
 			printf("\n");
 		}
 		printf("\n");

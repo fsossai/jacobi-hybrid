@@ -3,21 +3,15 @@
 
 #include <stdio.h>
 
-#define INDEX(i,j,k,N1,N2) ((i)*(N1)*(N2) + (j)*(N2) + (k))
+#define DOMAIN_DIM 3
+#define INDEX3D(i,j,k,N2,N3) ((i)*(N2)*(N3) + (j)*(N3) + (k))
+#define INDEX2D(i,j,N2) ((i)*(N2) (j))
 
 typedef struct
 {
-	int domain_x_size;
-	int domain_y_size;
-	int domain_z_size;
-
-	int subdomain_x_size;
-	int subdomain_y_size;
-	int subdomain_z_size;
-
-	int offset_x;
-	int offset_y;
-	int offset_z;
+	int domain_sizes[DOMAIN_DIM];
+	int subdomain_sizes[DOMAIN_DIM];
+	int subdomain_offsets[DOMAIN_DIM];
 
 	double alpha;
 	double residual;
@@ -28,7 +22,7 @@ typedef struct
 	double* U;
 	double* F;
 
-	double dx, dy, dz;
+	double dx[DOMAIN_DIM];
 
 } instance_t;
 
