@@ -4,14 +4,14 @@
 #include <string.h>
 #include "data.h"
 
-int main(int argc, char** argv)
+int main(int argc, char* argv[])
 {
 	int rank_world, nprocs_world;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocs_world);
-	
+
 	instance_t instance;
 	memset(&instance, 0x00, sizeof(instance_t));
 
@@ -19,9 +19,9 @@ int main(int argc, char** argv)
 		read_input(stdin, &instance);*/
 	if (rank_world == 0) // debug
 	{
-		instance.domain_sizes[0] = 100;
-		instance.domain_sizes[1] = 100;
-		instance.domain_sizes[2] = 100;
+		instance.domain_sizes[0] = 13;
+		instance.domain_sizes[1] = 14;
+		instance.domain_sizes[2] = 15;
 		instance.alpha = 0.8;
 		instance.relaxation = 1.0;
 		instance.tolerance = 1e-16;
@@ -40,65 +40,32 @@ int main(int argc, char** argv)
 	instance.subdomain_sizes[0] = 3;
 	instance.subdomain_sizes[1] = 4;
 	instance.subdomain_sizes[2] = 1;*/
-	
+
 	// creating shared and head communicators
 	MPI_Comm comm_shared, comm_head;
-	int rank_shared, nprocs_shared;
-	int rank_head, nprocs_head, color;
-	rank_head = MPI_PROC_NULL; //D
-	MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &comm_shared);
-	MPI_Comm_rank(comm_shared, &rank_shared);
-	MPI_Comm_size(comm_shared, &nprocs_shared);
-	color = (rank_shared == 0) ? 1 : MPI_UNDEFINED;
-	MPI_Comm_split(comm_shared, color, 0, &comm_head);
-	if (comm_head != MPI_COMM_NULL)
-	{
-		MPI_Comm_rank(comm_head, &rank_head);
-		MPI_Comm_size(comm_head, &nprocs_head);
-	}
+	int nheads_per_node = 2;
+	setup_shared_and_heads(nheads_per_node, &comm_shared, &comm_head);
 
 	// creating a cartesian topology upon 'comm_head'
 	MPI_Comm comm_cart = MPI_COMM_NULL;
-	int rank_cart = MPI_PROC_NULL;
-	int nprocs_per_dim[DOMAIN_DIM], periods[DOMAIN_DIM];
-	int coords[DOMAIN_DIM];
-	coords[0] = coords[1] = coords[2] = -1; //D
-	memset(periods, 0x00, DOMAIN_DIM * sizeof(int));
-	MPI_Dims_create(nprocs_head, DOMAIN_DIM, nprocs_per_dim);
-	if (comm_head != MPI_COMM_NULL)
-		MPI_Cart_create(comm_head, DOMAIN_DIM, nprocs_per_dim, periods, 0, &comm_cart);
-	if (comm_cart != MPI_COMM_NULL)
-	{
-		MPI_Comm_rank(comm_cart, &rank_cart);
-		MPI_Cart_coords(comm_cart, rank_cart, DOMAIN_DIM, coords);
-	}
+	int nprocs_per_dim[DOMAIN_DIM], coords[DOMAIN_DIM];
+	setup_topology(comm_head, nprocs_per_dim, coords, &comm_cart);
+	
+	// computing subdomain offsets and sizes
+	compute_limits(comm_cart, coords, nprocs_per_dim, &instance);
 
-	// computing offsets, and subdomains sizes
-	if (comm_cart != MPI_COMM_NULL)
-	{
-		int divisor, reminder;
-		for (int i = 0, index; i < DOMAIN_DIM; i++)
-		{
-			divisor = instance.domain_sizes[i] / nprocs_per_dim[i];
-			reminder = instance.domain_sizes[i] % nprocs_per_dim[i];
-			index = coords[i];
-			instance.subdomain_offsets[i] = index * divisor + ((index <= reminder) ? index : reminder);
-			index = coords[i] + 1;
-			instance.subdomain_sizes[i] =
-				index * divisor + ((index <= reminder) ? index : reminder) -
-				instance.subdomain_offsets[i];
-		}
-		initialize_problem(&instance);
-	}
+	initialize_problem(comm_cart, &instance);
 
 	for (int p = 0; p < nprocs_world; p++)
 	{
 		if (rank_world == p)
 		{
-			printf("w%2i s%2i h%2i c(%2i,%2i,%2i) ",
-				rank_world, rank_shared, rank_head,
+			int rank_shared = 666; //should never be displayed
+			MPI_Comm_rank(comm_shared, &rank_shared);
+			printf("w%2i s%2i c(%2i,%2i,%2i) ",
+				rank_world, rank_shared,
 				coords[0], coords[1], coords[2]);
-			printf("sd sizes %2i %2i %2i, offs %2i %2i %2i\n",
+			printf("sd sizes %2i %2i %2i, offs %3i %3i %3i\n",
 				instance.subdomain_sizes[0],
 				instance.subdomain_sizes[1],
 				instance.subdomain_sizes[2],
