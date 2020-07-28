@@ -23,7 +23,7 @@ void read_input(FILE* stream, instance_t* instance)
 
 }
 
-void broadcast_input_data(instance_t * instance)
+void broadcast_input_data_head(MPI_Comm comm_head, instance_t * instance)
 {
 	MPI_Aint displacements[5];
 	displacements[0] = (MPI_Aint)offsetof(instance_t, domain_sizes);
@@ -43,7 +43,35 @@ void broadcast_input_data(instance_t * instance)
 	MPI_Type_create_struct(5, block_lengths, displacements, types, &parameters_struct);
 	MPI_Type_commit(&parameters_struct);
 
-	MPI_Bcast(instance, 1, parameters_struct, 0, MPI_COMM_WORLD);
+	int root;
+	if (comm_head != MPI_COMM_NULL)
+		MPI_Bcast(instance, 1, parameters_struct, root = 0, comm_head);
+
+	MPI_Type_free(&parameters_struct);
+}
+
+void broadcast_data_shared(MPI_Comm comm_shared, instance_t* instance)
+{
+	MPI_Aint displacements[5];
+	displacements[0] = (MPI_Aint)offsetof(instance_t, subdomain_sizes);
+	displacements[1] = (MPI_Aint)offsetof(instance_t, alpha);
+	displacements[2] = (MPI_Aint)offsetof(instance_t, relaxation);
+	displacements[3] = (MPI_Aint)offsetof(instance_t, tolerance);
+	displacements[4] = (MPI_Aint)offsetof(instance_t, max_iterations);
+
+	int block_lengths[5];
+	block_lengths[0] = DOMAIN_DIM;
+	for (int i = 1; i < 5; i++)
+		block_lengths[i] = 1;
+
+	MPI_Datatype types[5] = { MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
+
+	MPI_Datatype parameters_struct;
+	MPI_Type_create_struct(5, block_lengths, displacements, types, &parameters_struct);
+	MPI_Type_commit(&parameters_struct);
+
+	int root;
+	MPI_Bcast(instance, 1, parameters_struct, root = 0, comm_shared);
 
 	MPI_Type_free(&parameters_struct);
 }
@@ -59,10 +87,9 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	const int NX = instance->subdomain_sizes[0];
 	const int NY = instance->subdomain_sizes[1];
 	const int NZ = instance->subdomain_sizes[2];
-	const int N = NX * NY * NZ;
 
-	instance->U = (double*)calloc(N, sizeof(double));
-	instance->F = (double*)malloc(N * sizeof(double));
+	instance->U = (double*)calloc((NX + 2) * (NY + 2) * (NZ + 2), sizeof(double));
+	instance->F = (double*)malloc(NX * NY * NZ * sizeof(double));
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1);
 	instance->dx[1] = 2.0 / (instance->domain_sizes[1] - 1);
 	instance->dx[2] = 2.0 / (instance->domain_sizes[2] - 1);
