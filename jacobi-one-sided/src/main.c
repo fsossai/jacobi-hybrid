@@ -20,8 +20,8 @@ int main(int argc, char* argv[])
 		read_input(stdin, &instance);*/
 	if (rank_world == 0) // debug
 	{
-		instance.domain_sizes[0] = 1000;
-		instance.domain_sizes[1] = 1000;
+		instance.domain_sizes[0] = 10;
+		instance.domain_sizes[1] = 15;
 		instance.alpha = 0.8;
 		instance.relaxation = 1.0;
 		instance.tolerance = 1e-16;
@@ -56,20 +56,18 @@ int main(int argc, char* argv[])
 		{
 			int rank_shared = 666; //should never be displayed
 			MPI_Comm_rank(comm_shared, &rank_shared);
-			printf("w%2i s%2i c(%2i,%2i,%2i) ",
+			printf("w%2i s%2i c(%2i,%2i) ",
 				rank_world, rank_shared,
-				coords[0], coords[1], coords[2]);
-			printf("sd sizes %2i %2i %2i, offs %3i %3i %3i\n",
+				coords[0], coords[1]);
+			printf("sd sizes %2i %2i, offs %3i %3i\n",
 				instance.subdomain_sizes[0],
 				instance.subdomain_sizes[1],
-				instance.subdomain_sizes[2],
 				instance.subdomain_offsets[0],
-				instance.subdomain_offsets[1],
-				instance.subdomain_offsets[2]);
+				instance.subdomain_offsets[1]);
 			printf(" alpha: %5.2lf, maxit %i, tol %lf relax %lf\n",
 				instance.alpha, instance.max_iterations, instance.tolerance, instance.relaxation);
-			//if (rank_shared == 0)
-			//	print_subdomain(instance.U, &instance, "%8.3lf ");
+			if (rank_shared == 0)
+				print_subdomain(instance.U, &instance, "%8.3lf ");
 			fflush(stdout);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);

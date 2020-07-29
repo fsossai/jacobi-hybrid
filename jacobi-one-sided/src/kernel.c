@@ -11,19 +11,16 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 	int N[DOMAIN_DIM];
 	N[0] = instance->subdomain_sizes[0];
 	N[1] = instance->subdomain_sizes[1];
-	N[2] = instance->subdomain_sizes[2];
 	const int U_NX = N[0] + 2;
 	const int U_NY = N[1] + 2;
-	const int U_NZ = N[2] + 2;
 
 	double* U = instance->U;
-	double* Unew = (double*)calloc(U_NX * U_NY * U_NZ, sizeof(double));
+	double* Unew = (double*)calloc(U_NX * U_NY, sizeof(double));
 	const double* F = instance->F;
 	//double* Unew = (double*)malloc(U_NX * U_NY * U_NZ * sizeof(double));
 	const double ax = 1.0 / (instance->dx[0] * instance->dx[0]);
 	const double ay = 1.0 / (instance->dx[1] * instance->dx[1]);
-	const double az = 1.0 / (instance->dx[2] * instance->dx[2]);
-	const double bb = -2.0 * (ax + ay + az) - instance->alpha;
+	const double bb = -2.0 * (ax + ay) - instance->alpha;
 	const double relax = instance->relaxation;
 
 	MPI_Datatype facets_low_data[DOMAIN_DIM];
@@ -96,30 +93,25 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 		{
 			for (int j = 1; j <= N[1]; j++)
 			{
-				for (int k = 1; k <= N[2]; k++)
-				{
-					partial = (
-						ax * (U[INDEX3D(i - 1, j, k, U_NY, U_NZ)] +
-							U[INDEX3D(i + 1, j, k, U_NY, U_NZ)]) +
-						ay * (U[INDEX3D(i, j - 1, k, U_NY, U_NZ)] +
-							U[INDEX3D(i, j + 1, k, U_NY, U_NZ)]) +
-						az * (U[INDEX3D(i, j, k - 1, U_NY, U_NZ)] +
-							U[INDEX3D(i, j, k + 1, U_NY, U_NZ)]) +
-						bb * U[INDEX3D(i, j, k, U_NY, U_NZ)] -
-						F[INDEX3D(i, j, k, U_NY, U_NZ)]
-						) / bb;
+				partial = (
+					ax * (U[INDEX2D(i - 1, j, U_NY)] +
+						U[INDEX2D(i + 1, j, U_NY)]) +
+					ay * (U[INDEX2D(i, j - 1, U_NY)] +
+						U[INDEX2D(i, j + 1, U_NY)]) +
+					bb * U[INDEX2D(i, j, U_NY)] -
+					F[INDEX2D(i, j, U_NY)]
+					) / bb;
 
-					Unew[INDEX3D(i, j, k, U_NY, U_NZ)] =
-						U[INDEX3D(i, j, k, U_NY, U_NZ)] - relax * partial;
+				Unew[INDEX2D(i, j, U_NY)] =
+					U[INDEX2D(i, j, U_NY)] - relax * partial;
 
-					residual += partial * partial;
-				}
+				residual += partial * partial;
 			}
 		}
 		double total_residual;
 		MPI_Allreduce(&residual, &total_residual, 1, MPI_DOUBLE, MPI_SUM, comm_cart);
 
-		total_residual = sqrt(total_residual) / (N[0] * N[1] * N[2]);
+		total_residual = sqrt(total_residual) / (N[0] * N[1]);
 		instance->residual = total_residual;
 
 		// swapping pointers

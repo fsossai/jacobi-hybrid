@@ -14,8 +14,8 @@ void read_input(FILE* stream, instance_t* instance)
 	fscanf(stream, "%i", &instance->max_iterations);
 
 	#ifdef _DEBUG
-	printf("dims\t\t: (%i,%i,%i)\n",
-		instance->domain_sizes[0], instance->domain_sizes[1], instance->domain_sizes[2]);
+	printf("dims\t\t: (%i,%i)\n",
+		instance->domain_sizes[0], instance->domain_sizes[1]);
 	printf("alpha\t\t: %lf\n", instance->alpha);
 	printf("relaxation\t: %lf\n", instance->relaxation);
 	printf("tolerance\t: %lf\n", instance->tolerance);
@@ -84,22 +84,18 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 
 	const int LX = instance->subdomain_offsets[0];
 	const int LY = instance->subdomain_offsets[1];
-	const int LZ = instance->subdomain_offsets[2];
 	const int NX = instance->subdomain_sizes[0];
 	const int NY = instance->subdomain_sizes[1];
-	const int NZ = instance->subdomain_sizes[2];
 
-	instance->U = (double*)calloc((NX + 2) * (NY + 2) * (NZ + 2), sizeof(double));
-	instance->F = (double*)malloc((NX + 2) * (NY + 2) * (NZ + 2) * sizeof(double));
+	instance->U = (double*)calloc((NX + 2) * (NY + 2), sizeof(double));
+	instance->F = (double*)malloc((NX + 2) * (NY + 2) * sizeof(double));
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1);
 	instance->dx[1] = 2.0 / (instance->domain_sizes[1] - 1);
-	instance->dx[2] = 2.0 / (instance->domain_sizes[2] - 1);
 
 	double* U = instance->U;
 	double* F = instance->F;
 	const double dx = instance->dx[0];
 	const double dy = instance->dx[1];
-	const double dz = instance->dx[2];
 	const double m_alpha = -instance->alpha;
 
 	double xval, yval, zval;
@@ -110,13 +106,9 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 		for (int y = LY, j = 1; j <= NY; y++, j++)
 		{
 			yval = -1.0 + dy * y;
-			for (int z = LZ, k = 1; k <= NZ; z++, k++)
-			{
-				zval = -1.0 + dz * z;
-				F[INDEX3D(i, j, k, NY+2, NZ+2)] =
-					m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval) * (1.0 - zval * zval) +
-					2.0 * (-2.0 + xval * xval + yval * yval + zval * zval);
-			}
+			F[INDEX2D(i, j, NY + 2)] =
+				m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval) +
+				2.0 * (-2.0 + xval * xval + yval * yval);
 		}
 	}
 }
@@ -134,14 +126,9 @@ void print_subdomain(double* mat, instance_t * instance, char* format)
 	for (int i = 1; i <= instance->subdomain_sizes[0]; i++)
 	{
 		for (int j = 1; j <= instance->subdomain_sizes[1]; j++)
-		{
-			for (int k = 1; k <= instance->subdomain_sizes[2]; k++)
-				printf(format,
-					mat[INDEX3D(i, j, k,
-						instance->subdomain_sizes[1]+2,
-						instance->subdomain_sizes[2]+2)]);
-			printf("\n");
-		}
+			printf(format,
+				mat[INDEX2D(i, j,
+					instance->subdomain_sizes[1] + 2)]);
 		printf("\n");
 	}
 }

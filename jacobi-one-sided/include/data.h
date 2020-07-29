@@ -3,8 +3,7 @@
 
 #include <stdio.h>
 
-#define DOMAIN_DIM 3
-#define INDEX3D(i,j,k,N2,N3) ((i)*(N2)*(N3) + (j)*(N3) + (k))
+#define DOMAIN_DIM 2
 #define INDEX2D(i,j,N2) ((i)*(N2) + (j))
 #define _CONFIRM { int __rank; MPI_Comm_rank(MPI_COMM_WORLD,&__rank); printf("[%2i] OK\n",__rank); fflush(stdout); }
 
