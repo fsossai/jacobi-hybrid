@@ -18,6 +18,8 @@ typedef struct
 	double relaxation;
 	double tolerance;
 	int max_iterations;
+	int performed_iterations;
+	double total_computation_time;
 
 	double* U;
 	double* F;

@@ -67,6 +67,8 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 
 	double residual, partial;
 	MPI_Request requests[DOMAIN_DIM * 4];
+	instance->performed_iterations = 0;
+	double timer = - MPI_Wtime();
 	for (int iteration = 0; iteration < instance->max_iterations; iteration++)
 	{
 		_CONFIRM;
@@ -119,7 +121,10 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 		instance->U = U = Unew;
 		Unew = temp;
 
-		printf("residual: %15.15lf\n", total_residual);
+		instance->residual = total_residual;
+		instance->performed_iterations++;
 	}
+	timer += MPI_Wtime();
+	instance->total_computation_time = timer;
 	free(Unew);
 }
