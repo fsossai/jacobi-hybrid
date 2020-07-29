@@ -90,10 +90,10 @@ int main(int argc, char* argv[])
 			printf("Total elapsed time\t: %.3lf s\n", local_timer);
 			printf("Average iteration time\t: %.3lf ms\n", iteration_time_avg * 1e3);
 			printf("Performance on rank 0\t: %.3lf MFlops\n",
-				instance.performed_iterations *
-				instance.subdomain_sizes[0] *
-				instance.subdomain_sizes[1] *
-				instance.subdomain_sizes[2] /
+				(double)instance.performed_iterations *
+				(double)instance.subdomain_sizes[0] *
+				(double)instance.subdomain_sizes[1] *
+				(double)instance.subdomain_sizes[2] /
 				local_timer * 1e-6 * 15);
 		}
 	}
