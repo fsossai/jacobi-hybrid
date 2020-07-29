@@ -68,11 +68,11 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 	for (int i = 0; i < DOMAIN_DIM; i++)
 		MPI_Cart_shift(comm_cart, i, 1, &rank_source[i], &rank_dest[i]);
 
-		_CONFIRM;
 	double residual, partial;
 	MPI_Request requests[DOMAIN_DIM * 4];
 	for (int iteration = 0; iteration < instance->max_iterations; iteration++)
 	{
+		_CONFIRM;
 		// halo exchange
 		int nreq = 0;
 		for (int i = 0; i < DOMAIN_DIM; i++)
