@@ -68,9 +68,10 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 	for (int i = 0; i < DOMAIN_DIM; i++)
 		MPI_Cart_shift(comm_cart, i, 1, &rank_source[i], &rank_dest[i]);
 
-		_CONFIRM;
 	double residual, partial;
 	MPI_Request requests[DOMAIN_DIM * 4];
+	instance->performed_iterations = 0;
+	double timer = - MPI_Wtime();
 	for (int iteration = 0; iteration < instance->max_iterations; iteration++)
 	{
 		// halo exchange
@@ -120,14 +121,16 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 		MPI_Allreduce(&residual, &total_residual, 1, MPI_DOUBLE, MPI_SUM, comm_cart);
 
 		total_residual = sqrt(total_residual) / (N[0] * N[1] * N[2]);
-		instance->residual = total_residual;
 
 		// swapping pointers
 		double* temp = U;
 		instance->U = U = Unew;
 		Unew = temp;
 
-		printf("residual: %15.15lf\n", total_residual);
+		instance->residual = total_residual;
+		instance->performed_iterations++;
 	}
+	timer += MPI_Wtime();
+	instance->total_computation_time = timer;
 	free(Unew);
 }
