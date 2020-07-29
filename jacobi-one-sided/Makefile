@@ -2,8 +2,13 @@
 
 MPICC = mpiicc
 
+all: clean release
+
 release:
-	$(MPICC) -Ofast -Iinclude -ojacobi.x src/*.c
+	$(MPICC) -Ofast -xAVX -fno-alias -Iinclude -ojacobi.x src/*.c
 
 debug:
 	$(MPICC) -g -O0 -Wall -Iinclude -ojacobi.x src/*.c
+
+clean:
+	rm -f *.x
