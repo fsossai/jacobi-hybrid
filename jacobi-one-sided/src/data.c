@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include "data.h"
 
 void read_input(FILE* stream, instance_t* instance)
