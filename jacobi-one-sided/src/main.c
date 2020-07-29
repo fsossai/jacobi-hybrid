@@ -20,13 +20,13 @@ int main(int argc, char* argv[])
 		read_input(stdin, &instance);*/
 	if (rank_world == 0) // debug
 	{
-		instance.domain_sizes[0] = 13;
-		instance.domain_sizes[1] = 14;
-		instance.domain_sizes[2] = 15;
+		instance.domain_sizes[0] = 4;
+		instance.domain_sizes[1] = 3;
+		instance.domain_sizes[2] = 3;
 		instance.alpha = 0.8;
 		instance.relaxation = 1.0;
 		instance.tolerance = 1e-16;
-		instance.max_iterations = 5;
+		instance.max_iterations = 1;
 	}
 
 	// creating shared and head communicators
@@ -47,6 +47,7 @@ int main(int argc, char* argv[])
 	broadcast_data_shared(comm_shared, &instance);
 
 	initialize_problem(comm_cart, &instance);
+	
 	compute_jacobi(comm_cart, &instance);
 
 	const char show = 1;
@@ -68,7 +69,7 @@ int main(int argc, char* argv[])
 				instance.subdomain_offsets[2]);
 			printf(" alpha: %5.2lf, maxit %i, tol %lf relax %lf\n",
 				instance.alpha, instance.max_iterations, instance.tolerance, instance.relaxation);
-			//print_subdomain(instance.F, &instance, "%8.3lf ");
+			print_subdomain(instance.U, &instance, "%8.3lf ");
 			fflush(stdout);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);

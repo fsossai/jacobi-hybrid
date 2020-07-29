@@ -16,27 +16,50 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 	const int U_NZ = N[2] + 2;
 
 	double* U = instance->U;
-	double* F = instance->F;
-	double* Unew = (double*)malloc(U_NX * U_NY * U_NZ * sizeof(double));
+	double* Unew = (double*)calloc(U_NX * U_NY * U_NZ, sizeof(double));
+	const double* F = instance->F;
+	//double* Unew = (double*)malloc(U_NX * U_NY * U_NZ * sizeof(double));
 	const double dx = instance->dx[0];
 	const double dy = instance->dx[1];
 	const double dz = instance->dx[2];
 	const double m_alpha = -instance->alpha;
 
-	MPI_Datatype facets[DOMAIN_DIM];
-	int starts[DOMAIN_DIM], sizes[DOMAIN_DIM], subsizes[DOMAIN_DIM];
-	memset(starts, 0x00, DOMAIN_DIM * sizeof(int));
+	MPI_Datatype facets_low_data[DOMAIN_DIM];
+	MPI_Datatype facets_low_halo[DOMAIN_DIM];
+	MPI_Datatype facets_high_data[DOMAIN_DIM];
+	MPI_Datatype facets_high_halo[DOMAIN_DIM];
+	int starts_low_data[DOMAIN_DIM];
+	int starts_low_halo[DOMAIN_DIM];
+	int starts_high_data[DOMAIN_DIM];
+	int starts_high_halo[DOMAIN_DIM];
+	int sizes[DOMAIN_DIM], subsizes[DOMAIN_DIM];
 	memcpy(subsizes, instance->subdomain_sizes, DOMAIN_DIM * sizeof(int));
-
+	
 	for (int i = 0; i < DOMAIN_DIM; i++)
-		sizes[i] = instance->subdomain_sizes[i] + 2;
+	{
+		sizes[i] = N[i] + 2;
+		starts_low_data[i] = starts_low_halo[i] = starts_high_data[i] = starts_high_halo[i] = 1;
+	}
 	for (int i = 0; i < DOMAIN_DIM; i++)
 	{
 		int temp = subsizes[i];
 		subsizes[i] = 1;
-		MPI_Type_create_subarray(DOMAIN_DIM, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &facets[i]);
-		MPI_Type_commit(&facets[i]);
+		starts_low_halo[i] = 0;
+		starts_high_data[i] = N[i];
+		starts_high_halo[i] = N[i] + 1;
+
+		MPI_Type_create_subarray(DOMAIN_DIM, sizes, subsizes, starts_low_data, MPI_ORDER_C, MPI_DOUBLE, &facets_low_data[i]);
+		MPI_Type_create_subarray(DOMAIN_DIM, sizes, subsizes, starts_low_halo, MPI_ORDER_C, MPI_DOUBLE, &facets_low_halo[i]);
+		MPI_Type_create_subarray(DOMAIN_DIM, sizes, subsizes, starts_high_data, MPI_ORDER_C, MPI_DOUBLE, &facets_high_data[i]);
+		MPI_Type_create_subarray(DOMAIN_DIM, sizes, subsizes, starts_high_halo, MPI_ORDER_C, MPI_DOUBLE, &facets_high_halo[i]);
+		MPI_Type_commit(&facets_low_data[i]);
+		MPI_Type_commit(&facets_low_halo[i]);
+		MPI_Type_commit(&facets_high_data[i]);
+		MPI_Type_commit(&facets_high_halo[i]);
+
+		// restoring initial general values
 		subsizes[i] = temp;
+		starts_low_halo[i] = starts_high_data[i] = starts_high_halo[i] = 1;
 	}
 
 	int rank_source[DOMAIN_DIM], rank_dest[DOMAIN_DIM];
@@ -50,26 +73,15 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 		int nreq = 0;
 		for (int i = 0; i < DOMAIN_DIM; i++)
 		{
-			printf("i:%i source:%i, dest:%i\n", i, rank_source[i], rank_dest[i]); fflush(stdout); //D
 			if (rank_source[i] != MPI_PROC_NULL)
 			{
-				printf("[%i] Low comm\n",i);
-				MPI_Irecv(&U[INDEX3D(i != 0, i != 1, i != 2, U_NY, U_NZ)], 1, facets[i], rank_source[i], 0, comm_cart, &requests[nreq++]);
-				MPI_Isend(&U[INDEX3D(1, 1, 1, U_NY, U_NZ)], 1, facets[i], rank_source[i], 0, comm_cart, &requests[nreq++]);
+				MPI_Irecv(U, 1, facets_low_halo[i], rank_source[i], 0, comm_cart, &requests[nreq++]);
+				MPI_Isend(U, 1, facets_low_data[i], rank_source[i], 0, comm_cart, &requests[nreq++]);
 			}
 			if (rank_dest[i] != MPI_PROC_NULL)
 			{
-				printf("[%i] High comm\n", i);
-				MPI_Isend(&U[INDEX3D(
-					(i == 0) ? N[i] : 1,
-					(i == 1) ? N[i] : 1,
-					(i == 2) ? N[i] : 1,
-					U_NY, U_NZ)], 1, facets[i], rank_dest[i], 0, comm_cart, &requests[nreq++]);
-				MPI_Irecv(&U[INDEX3D(
-					(i == 0) ? (1 + N[i]) : 1,
-					(i == 1) ? (1 + N[i]) : 1,
-					(i == 2) ? (1 + N[i]) : 1,
-					U_NY, U_NZ)], 1, facets[i], rank_dest[i], 0, comm_cart, &requests[nreq++]);
+				MPI_Isend(U, 1, facets_high_data[i], rank_dest[i], 0, comm_cart, &requests[nreq++]);
+				MPI_Irecv(U, 1, facets_high_halo[i], rank_dest[i], 0, comm_cart, &requests[nreq++]);
 			}
 		}
 		MPI_Waitall(nreq, requests, MPI_STATUSES_IGNORE);
