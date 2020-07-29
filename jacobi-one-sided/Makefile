@@ -3,7 +3,7 @@
 MPICC = mpiicc
 
 release:
-	$(MPICC) -Ofast -Iinclude -ojacobi src/*.c
+	$(MPICC) -Ofast -Iinclude -ojacobi.x src/*.c
 
 debug:
-	$(MPICC) -g -O0 -Iinclude -ojacobi src/*.c
+	$(MPICC) -g -O0 -Iinclude -ojacobi.x src/*.c
