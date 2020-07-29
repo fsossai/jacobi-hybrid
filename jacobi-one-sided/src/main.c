@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 				(double)instance.subdomain_sizes[0] *
 				(double)instance.subdomain_sizes[1] *
 				(double)instance.subdomain_sizes[2] /
-				local_timer * 1e-6 * 15);
+				local_timer * 1e-6 * 15.0);
 		}
 	}
 
