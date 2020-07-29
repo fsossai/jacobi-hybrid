@@ -20,12 +20,12 @@ int main(int argc, char* argv[])
 		read_input(stdin, &instance);*/
 	if (rank_world == 0) // debug
 	{
-		instance.domain_sizes[0] = 100;
-		instance.domain_sizes[1] = 150;
+		instance.domain_sizes[0] = 7000;
+		instance.domain_sizes[1] = 7000;
 		instance.alpha = 0.8;
 		instance.relaxation = 1.0;
 		instance.tolerance = 1e-16;
-		instance.max_iterations = 10;
+		instance.max_iterations = 50;
 	}
 
 	// creating shared and head communicators
@@ -88,10 +88,10 @@ int main(int argc, char* argv[])
 			printf("Total elapsed time\t: %.3lf s\n", local_timer);
 			printf("Average iteration time\t: %.3lf ms\n", iteration_time_avg * 1e3);
 			printf("Performance on rank 0\t: %.3lf MFlops\n",
-				instance.performed_iterations *
-				instance.subdomain_sizes[0] *
-				instance.subdomain_sizes[1] /
-				local_timer * 1e-6 * 13);
+				(double)instance.performed_iterations *
+				(double)instance.subdomain_sizes[0] *
+				(double)instance.subdomain_sizes[1] /
+				local_timer * 1e-6 * 13.0);
 		}
 	}
 
