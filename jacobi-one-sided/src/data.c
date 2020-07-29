@@ -161,7 +161,7 @@ void setup_topology(MPI_Comm comm_head, int* nprocs_per_dim, int* coords, MPI_Co
 	*comm_cart = MPI_COMM_NULL;
 	int rank_cart = MPI_PROC_NULL;
 	int periods[DOMAIN_DIM];
-	coords[0] = coords[1] = coords[2] = -1;
+	coords[0] = coords[1] = -1;
 	memset(periods, 0x00, DOMAIN_DIM * sizeof(int));
 	memset(nprocs_per_dim, 0x00, DOMAIN_DIM * sizeof(int));
 	if (nprocs_head > 0)
