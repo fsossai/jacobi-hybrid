@@ -89,7 +89,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	const int NZ = instance->subdomain_sizes[2];
 
 	instance->U = (double*)calloc((NX + 2) * (NY + 2) * (NZ + 2), sizeof(double));
-	instance->F = (double*)malloc(NX * NY * NZ * sizeof(double));
+	instance->F = (double*)malloc((NX + 2) * (NY + 2) * (NZ + 2) * sizeof(double));
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1);
 	instance->dx[1] = 2.0 / (instance->domain_sizes[1] - 1);
 	instance->dx[2] = 2.0 / (instance->domain_sizes[2] - 1);
@@ -103,16 +103,16 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 
 	double xval, yval, zval;
 
-	for (int x = LX, i = 0; i < NX; x++, i++)
+	for (int x = LX, i = 1; i <= NX; x++, i++)
 	{
 		xval = -1.0 + dx * x;
-		for (int y = LY, j = 0; j < NY; y++, j++)
+		for (int y = LY, j = 1; j <= NY; y++, j++)
 		{
 			yval = -1.0 + dy * y;
-			for (int z = LZ, k = 0; k < NZ; z++, k++)
+			for (int z = LZ, k = 1; k <= NZ; z++, k++)
 			{
 				zval = -1.0 + dz * z;
-				F[INDEX3D(i, j, k, NY, NZ)] =
+				F[INDEX3D(i, j, k, NY+2, NZ+2)] =
 					m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval) * (1.0 - zval * zval) +
 					2.0 * (-2.0 + xval * xval + yval * yval + zval * zval);
 			}
