@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 				instance.performed_iterations *
 				instance.subdomain_sizes[0] *
 				instance.subdomain_sizes[1] /
-				local_timer * 1e-6 * 15);
+				local_timer * 1e-6 * 13);
 		}
 	}
 
