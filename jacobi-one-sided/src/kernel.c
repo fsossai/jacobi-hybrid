@@ -71,7 +71,6 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 	double timer = - MPI_Wtime();
 	for (int iteration = 0; iteration < instance->max_iterations; iteration++)
 	{
-		_CONFIRM;
 		// halo exchange
 		int nreq = 0;
 		for (int i = 0; i < DOMAIN_DIM; i++)
