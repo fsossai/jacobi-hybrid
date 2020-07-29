@@ -20,13 +20,13 @@ int main(int argc, char* argv[])
 		read_input(stdin, &instance);*/
 	if (rank_world == 0) // debug
 	{
-		instance.domain_sizes[0] = 4;
-		instance.domain_sizes[1] = 15;
+		instance.domain_sizes[0] = 5;
+		instance.domain_sizes[1] = 5;
 		instance.domain_sizes[2] = 10;
 		instance.alpha = 0.8;
 		instance.relaxation = 1.0;
 		instance.tolerance = 1e-16;
-		instance.max_iterations = 1;
+		instance.max_iterations = 5;
 	}
 
 	// creating shared and head communicators

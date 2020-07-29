@@ -131,15 +131,15 @@ void close_problem(instance_t * instance)
 
 void print_subdomain(double* mat, instance_t * instance, char* format)
 {
-	for (int i = 0; i < instance->subdomain_sizes[0]; i++)
+	for (int i = 1; i <= instance->subdomain_sizes[0]; i++)
 	{
-		for (int j = 0; j < instance->subdomain_sizes[1]; j++)
+		for (int j = 1; j <= instance->subdomain_sizes[1]; j++)
 		{
-			for (int k = 0; k < instance->subdomain_sizes[2]; k++)
+			for (int k = 1; k <= instance->subdomain_sizes[2]; k++)
 				printf(format,
 					mat[INDEX3D(i, j, k,
-						instance->subdomain_sizes[1],
-						instance->subdomain_sizes[2])]);
+						instance->subdomain_sizes[1]+2,
+						instance->subdomain_sizes[2]+2)]);
 			printf("\n");
 		}
 		printf("\n");
@@ -160,7 +160,7 @@ void setup_shared_and_heads(int nheads_per_node, MPI_Comm * comm_shared, MPI_Com
 	else
 		color = 1;
 
-	MPI_Comm_split(*comm_shared, color, 0, comm_head);
+	MPI_Comm_split(MPI_COMM_WORLD, color, 0, comm_head);
 }
 
 void setup_topology(MPI_Comm comm_head, int* nprocs_per_dim, int* coords, MPI_Comm * comm_cart)
