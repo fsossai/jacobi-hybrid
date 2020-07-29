@@ -34,19 +34,19 @@ int main(int argc, char* argv[])
 	setup_shared_and_heads(nheads_per_node, &comm_shared, &comm_head);
 
 	// to keep things simple, min{dims_i} must be >= 'nprocs'
-	broadcast_input_data_head(comm_head, &instance);	
+	broadcast_input_data_head(comm_head, &instance);
 
 	// creating a cartesian topology upon 'comm_head'
 	MPI_Comm comm_cart = MPI_COMM_NULL;
 	int nprocs_per_dim[DOMAIN_DIM], coords[DOMAIN_DIM];
 	setup_topology(comm_head, nprocs_per_dim, coords, &comm_cart);
-	
+
 	// computing subdomain offsets and sizes
 	compute_limits(comm_cart, coords, nprocs_per_dim, &instance);
 	broadcast_data_shared(comm_shared, &instance);
 
 	initialize_problem(comm_cart, &instance);
-	
+
 	compute_jacobi(comm_cart, &instance);
 
 	const char show = 1;
@@ -56,10 +56,11 @@ int main(int argc, char* argv[])
 		{
 			int rank_shared = 666; //should never be displayed
 			MPI_Comm_rank(comm_shared, &rank_shared);
-			printf("w%2i s%2i c(%2i,%2i) ",
-				rank_world, rank_shared,
-				coords[0], coords[1]);
-			printf("sd sizes %2i %2i, offs %3i %3i\n",
+			if (comm_head != MPI_COMM_NULL)
+				printf("w%2i s%2i c(%2i,%2i) ",
+					rank_world, rank_shared,
+					coords[0], coords[1]);
+			/*printf("sd sizes %2i %2i, offs %3i %3i\n",
 				instance.subdomain_sizes[0],
 				instance.subdomain_sizes[1],
 				instance.subdomain_offsets[0],
@@ -67,7 +68,19 @@ int main(int argc, char* argv[])
 			printf(" alpha: %5.2lf, maxit %i, tol %lf relax %lf\n",
 				instance.alpha, instance.max_iterations, instance.tolerance, instance.relaxation);
 			if (rank_shared == 0)
-				print_subdomain(instance.U, &instance, "%8.3lf ");
+				print_subdomain(instance.U, &instance, "%8.3lf ");*/
+			fflush(stdout);
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+
+	for (int i = 0; i<nprocs_world; i++)
+	{
+		if (comm_head != MPI_COMM_NULL)
+		{
+			printf("[%02i]\n", rank_world);
+			fflush(stdout);
+			print_subdomain(instance.U, &instance, "%8.3lf ");
 			fflush(stdout);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
