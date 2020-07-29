@@ -1,6 +1,7 @@
 #include "kernel.h"
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 {
@@ -23,6 +24,7 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 	const double ay = 1.0 / (instance->dx[1] * instance->dx[1]);
 	const double az = 1.0 / (instance->dx[2] * instance->dx[2]);
 	const double bb = -2.0 * (ax + ay + az) - instance->alpha;
+	const double relax = instance->relaxation;
 
 	MPI_Datatype facets_low_data[DOMAIN_DIM];
 	MPI_Datatype facets_low_halo[DOMAIN_DIM];
@@ -66,6 +68,8 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 	for (int i = 0; i < DOMAIN_DIM; i++)
 		MPI_Cart_shift(comm_cart, i, 1, &rank_source[i], &rank_dest[i]);
 
+		_CONFIRM;
+	double residual, partial;
 	MPI_Request requests[DOMAIN_DIM * 4];
 	for (int iteration = 0; iteration < instance->max_iterations; iteration++)
 	{
@@ -87,13 +91,14 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 		MPI_Waitall(nreq, requests, MPI_STATUSES_IGNORE);
 
 		// computation
+		residual = 0.0;
 		for (int i = 1; i <= N[0]; i++)
 		{
 			for (int j = 1; j <= N[1]; j++)
 			{
 				for (int k = 1; k <= N[2]; k++)
 				{
-					Unew[INDEX3D(i, j, k, U_NY, U_NZ)] = (
+					partial = (
 						ax * (U[INDEX3D(i - 1, j, k, U_NY, U_NZ)] +
 							U[INDEX3D(i + 1, j, k, U_NY, U_NZ)]) +
 						ay * (U[INDEX3D(i, j - 1, k, U_NY, U_NZ)] +
@@ -104,21 +109,25 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 						F[INDEX3D(i, j, k, U_NY, U_NZ)]
 						) / bb;
 
-					/*fLRes = (ax * (UOLD(j, i - 1) + UOLD(j, i + 1))
-						+ ay * (UOLD(j - 1, i) + UOLD(j + 1, i))
-						+ b * UOLD(j, i) - F(j, i)) / b;
+					Unew[INDEX3D(i, j, k, U_NY, U_NZ)] =
+						U[INDEX3D(i, j, k, U_NY, U_NZ)] - relax * partial;
 
-					U(j, i) = UOLD(j, i) - data->fRelax * fLRes;
-
-					residual += fLRes * fLRes;*/
+					residual += partial * partial;
 				}
 			}
 		}
+		double total_residual;
+		MPI_Allreduce(&residual, &total_residual, 1, MPI_DOUBLE, MPI_SUM, comm_cart);
+
+		total_residual = sqrt(total_residual) / (N[0] * N[1] * N[2]);
+		instance->residual = total_residual;
 
 		// swapping pointers
 		double* temp = U;
 		instance->U = U = Unew;
 		Unew = temp;
+
+		printf("residual: %15.15lf\n", total_residual);
 	}
 	free(Unew);
 }

@@ -21,8 +21,8 @@ int main(int argc, char* argv[])
 	if (rank_world == 0) // debug
 	{
 		instance.domain_sizes[0] = 4;
-		instance.domain_sizes[1] = 3;
-		instance.domain_sizes[2] = 3;
+		instance.domain_sizes[1] = 15;
+		instance.domain_sizes[2] = 10;
 		instance.alpha = 0.8;
 		instance.relaxation = 1.0;
 		instance.tolerance = 1e-16;
@@ -69,7 +69,8 @@ int main(int argc, char* argv[])
 				instance.subdomain_offsets[2]);
 			printf(" alpha: %5.2lf, maxit %i, tol %lf relax %lf\n",
 				instance.alpha, instance.max_iterations, instance.tolerance, instance.relaxation);
-			print_subdomain(instance.U, &instance, "%8.3lf ");
+			if (rank_shared == 0)
+				print_subdomain(instance.U, &instance, "%8.3lf ");
 			fflush(stdout);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
