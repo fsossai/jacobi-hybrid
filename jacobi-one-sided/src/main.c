@@ -20,8 +20,8 @@ int main(int argc, char* argv[])
 		read_input(stdin, &instance);*/
 	if (rank_world == 0) // debug
 	{
-		instance.domain_sizes[0] = 10;
-		instance.domain_sizes[1] = 15;
+		instance.domain_sizes[0] = 100;
+		instance.domain_sizes[1] = 150;
 		instance.alpha = 0.8;
 		instance.relaxation = 1.0;
 		instance.tolerance = 1e-16;
@@ -90,8 +90,7 @@ int main(int argc, char* argv[])
 			printf("Performance on rank 0\t: %.3lf MFlops\n",
 				instance.performed_iterations *
 				instance.subdomain_sizes[0] *
-				instance.subdomain_sizes[1] *
-				instance.subdomain_sizes[2] /
+				instance.subdomain_sizes[1] /
 				local_timer * 1e-6 * 15);
 		}
 	}
