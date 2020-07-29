@@ -78,10 +78,14 @@ int main(int argc, char* argv[])
 	{
 		if (comm_head != MPI_COMM_NULL)
 		{
-			printf("[%02i]\n", rank_world);
-			fflush(stdout);
-			print_subdomain(instance.U, &instance, "%8.3lf ");
-			fflush(stdout);
+			if (rank_world == i)
+			{
+				printf("[%02i]\n", rank_world);
+				fflush(stdout);
+				print_subdomain(instance.U, &instance, "%8.3lf ");
+				fflush(stdout);
+				Sleep(1000);
+			}
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
