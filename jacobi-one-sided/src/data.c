@@ -98,7 +98,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	const double dy = instance->dx[1];
 	const double m_alpha = -instance->alpha;
 
-	double xval, yval, zval;
+	double xval, yval;
 
 	for (int x = LX, i = 1; i <= NX; x++, i++)
 	{
