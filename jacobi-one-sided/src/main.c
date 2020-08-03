@@ -33,7 +33,8 @@ int main(int argc, char* argv[])
 	const int nheads_per_node = 1;
 	setup_shared_and_heads(nheads_per_node, &comm_shared, &comm_head);
 	int nprocs_head;
-	MPI_Comm_size(comm_head, &nprocs_head);
+	if (comm_head != MPI_COMM_NULL)
+		MPI_Comm_size(comm_head, &nprocs_head);
 
 	// to keep things simple, min{dims_i} must be >= 'nprocs'
 	broadcast_input_data_head(comm_head, &instance);
@@ -91,7 +92,7 @@ int main(int argc, char* argv[])
 				(double)instance.performed_iterations *
 				(double)instance.subdomain_sizes[0] *
 				(double)instance.subdomain_sizes[1] /
-				local_timer * 1e-6 * 13.0);
+				local_timer * 1e-6 * 15.0);
 		}
 	}
 
