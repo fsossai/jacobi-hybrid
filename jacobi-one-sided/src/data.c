@@ -107,8 +107,9 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 		{
 			yval = -1.0 + dy * y;
 			F[INDEX2D(i, j, NY + 2)] =
-				m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval) +
-				2.0 * (-2.0 + xval * xval + yval * yval);
+				m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval)
+				- 2.0 * (1.0 - yval * yval)
+				- 2.0 * (1.0 - xval * xval);
 		}
 	}
 }
