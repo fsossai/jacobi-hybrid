@@ -71,7 +71,7 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 	double residual, partial;
 	MPI_Request requests[DOMAIN_DIM * 4];
 	instance->performed_iterations = 0;
-	double timer = - MPI_Wtime();
+	double timer = -MPI_Wtime();
 	for (int iteration = 0; iteration < instance->max_iterations; iteration++)
 	{
 		// halo exchange
@@ -100,18 +100,18 @@ void compute_jacobi(MPI_Comm comm_cart, instance_t* instance)
 				for (int k = 1; k <= N[2]; k++)
 				{
 					partial = (
-						ax * (U[INDEX3D(i - 1, j, k, U_NY, U_NZ)] +
-							U[INDEX3D(i + 1, j, k, U_NY, U_NZ)]) +
-						ay * (U[INDEX3D(i, j - 1, k, U_NY, U_NZ)] +
-							U[INDEX3D(i, j + 1, k, U_NY, U_NZ)]) +
-						az * (U[INDEX3D(i, j, k - 1, U_NY, U_NZ)] +
-							U[INDEX3D(i, j, k + 1, U_NY, U_NZ)]) +
-						bb * U[INDEX3D(i, j, k, U_NY, U_NZ)] -
-						F[INDEX3D(i, j, k, U_NY, U_NZ)]
+						ax * (U[INDEX(i - 1, j, k, U_NY, U_NZ)] +
+							U[INDEX(i + 1, j, k, U_NY, U_NZ)]) +
+						ay * (U[INDEX(i, j - 1, k, U_NY, U_NZ)] +
+							U[INDEX(i, j + 1, k, U_NY, U_NZ)]) +
+						az * (U[INDEX(i, j, k - 1, U_NY, U_NZ)] +
+							U[INDEX(i, j, k + 1, U_NY, U_NZ)]) +
+						bb * U[INDEX(i, j, k, U_NY, U_NZ)] -
+						F[INDEX(i, j, k, U_NY, U_NZ)]
 						) / bb;
 
-					Unew[INDEX3D(i, j, k, U_NY, U_NZ)] =
-						U[INDEX3D(i, j, k, U_NY, U_NZ)] - relax * partial;
+					Unew[INDEX(i, j, k, U_NY, U_NZ)] =
+						U[INDEX(i, j, k, U_NY, U_NZ)] - relax * partial;
 
 					residual += partial * partial;
 				}

@@ -38,19 +38,19 @@ int main(int argc, char* argv[])
 		MPI_Comm_size(comm_head, &nprocs_head);
 
 	// to keep things simple, min{dims_i} must be >= 'nprocs'
-	broadcast_input_data_head(comm_head, &instance);	
+	broadcast_input_data_head(comm_head, &instance);
 
 	// creating a cartesian topology upon 'comm_head'
 	MPI_Comm comm_cart = MPI_COMM_NULL;
-	int nprocs_per_dim[DOMAIN_DIM], coords[DOMAIN_DIM];
-	setup_topology(comm_head, nprocs_per_dim, coords, &comm_cart);
-	
+	int nsplits_per_dim[DOMAIN_DIM], coords[DOMAIN_DIM];
+	setup_topology(comm_head, nsplits_per_dim, coords, &comm_cart);
+
 	// computing subdomain offsets and sizes
-	compute_limits(comm_cart, coords, nprocs_per_dim, &instance);
+	compute_limits(comm_cart, coords, nsplits_per_dim, &instance);
 	broadcast_data_shared(comm_shared, &instance);
 
 	initialize_problem(comm_cart, &instance);
-	
+
 	double local_timer = -MPI_Wtime();
 	compute_jacobi(comm_cart, &instance);
 	local_timer += MPI_Wtime();

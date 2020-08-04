@@ -51,7 +51,7 @@ void broadcast_input_data_head(MPI_Comm comm_head, instance_t * instance)
 	MPI_Type_free(&parameters_struct);
 }
 
-void broadcast_data_shared(MPI_Comm comm_shared, instance_t* instance)
+void broadcast_data_shared(MPI_Comm comm_shared, instance_t * instance)
 {
 	MPI_Aint displacements[5];
 	displacements[0] = (MPI_Aint)offsetof(instance_t, subdomain_sizes);
@@ -113,7 +113,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 			for (int z = LZ, k = 1; k <= NZ; z++, k++)
 			{
 				zval = -1.0 + dz * z;
-				F[INDEX3D(i, j, k, NY + 2, NZ + 2)] =
+				F[INDEX(i, j, k, NY + 2, NZ + 2)] =
 					m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval) * (1.0 - zval * zval)
 					- 2.0 * (1.0 - yval * yval) * (1.0 - zval * zval)
 					- 2.0 * (1.0 - xval * xval) * (1.0 - zval * zval)
@@ -139,9 +139,9 @@ void print_subdomain(double* mat, instance_t * instance, char* format)
 		{
 			for (int k = 1; k <= instance->subdomain_sizes[2]; k++)
 				printf(format,
-					mat[INDEX3D(i, j, k,
-						instance->subdomain_sizes[1]+2,
-						instance->subdomain_sizes[2]+2)]);
+					mat[INDEX(i, j, k,
+						instance->subdomain_sizes[1] + 2,
+						instance->subdomain_sizes[2] + 2)]);
 			printf("\n");
 		}
 		printf("\n");
@@ -165,7 +165,7 @@ void setup_shared_and_heads(int nheads_per_node, MPI_Comm * comm_shared, MPI_Com
 	MPI_Comm_split(MPI_COMM_WORLD, color, 0, comm_head);
 }
 
-void setup_topology(MPI_Comm comm_head, int* nprocs_per_dim, int* coords, MPI_Comm * comm_cart)
+void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_Comm * comm_cart)
 {
 	int rank_head, nprocs_head = 0;
 	if (comm_head != MPI_COMM_NULL)
@@ -178,22 +178,22 @@ void setup_topology(MPI_Comm comm_head, int* nprocs_per_dim, int* coords, MPI_Co
 	int periods[DOMAIN_DIM];
 	coords[0] = coords[1] = coords[2] = -1;
 	memset(periods, 0x00, DOMAIN_DIM * sizeof(int));
-	memset(nprocs_per_dim, 0x00, DOMAIN_DIM * sizeof(int));
+	memset(nsplits_per_dim, 0x00, DOMAIN_DIM * sizeof(int));
 
-	#ifdef NOSPLIT0
-	nprocs_per_dim[0] = 1;
+	#ifdef NO_SPLIT_X
+	nsplits_per_dim[0] = 1;
 	#endif
-	#ifdef NOSPLIT1
-	nprocs_per_dim[1] = 1;
+	#ifdef NO_SPLIT_Y
+	nsplits_per_dim[1] = 1;
 	#endif
-	#ifdef NOSPLIT2
-	nprocs_per_dim[2] = 1;
+	#ifdef NO_SPLIT_Z
+	nsplits_per_dim[2] = 1;
 	#endif
 
 	if (nprocs_head > 0)
-		MPI_Dims_create(nprocs_head, DOMAIN_DIM, nprocs_per_dim);
+		MPI_Dims_create(nprocs_head, DOMAIN_DIM, nsplits_per_dim);
 	if (comm_head != MPI_COMM_NULL)
-		MPI_Cart_create(comm_head, DOMAIN_DIM, nprocs_per_dim, periods, 0, comm_cart);
+		MPI_Cart_create(comm_head, DOMAIN_DIM, nsplits_per_dim, periods, 0, comm_cart);
 	if (*comm_cart != MPI_COMM_NULL)
 	{
 		MPI_Comm_rank(*comm_cart, &rank_cart);
@@ -201,21 +201,18 @@ void setup_topology(MPI_Comm comm_head, int* nprocs_per_dim, int* coords, MPI_Co
 	}
 }
 
-void compute_limits(MPI_Comm comm_cart, int* coords, int* nprocs_per_dim, instance_t * instance)
+void compute_limits(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, instance_t * instance)
 {
-	if (comm_cart != MPI_COMM_NULL)
+	int divisor, reminder;
+	for (int i = 0, index; i < DOMAIN_DIM; i++)
 	{
-		int divisor, reminder;
-		for (int i = 0, index; i < DOMAIN_DIM; i++)
-		{
-			divisor = instance->domain_sizes[i] / nprocs_per_dim[i];
-			reminder = instance->domain_sizes[i] % nprocs_per_dim[i];
-			index = coords[i];
-			instance->subdomain_offsets[i] = index * divisor + ((index <= reminder) ? index : reminder);
-			index = coords[i] + 1;
-			instance->subdomain_sizes[i] =
-				index * divisor + ((index <= reminder) ? index : reminder) -
-				instance->subdomain_offsets[i];
-		}
+		divisor = instance->domain_sizes[i] / nsplits_per_dim[i];
+		reminder = instance->domain_sizes[i] % nsplits_per_dim[i];
+		index = coords[i];
+		instance->subdomain_offsets[i] = index * divisor + ((index <= reminder) ? index : reminder);
+		index = coords[i] + 1;
+		instance->subdomain_sizes[i] =
+			index * divisor + ((index <= reminder) ? index : reminder) -
+			instance->subdomain_offsets[i];
 	}
 }
