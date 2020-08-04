@@ -177,6 +177,17 @@ void setup_topology(MPI_Comm comm_head, int* nprocs_per_dim, int* coords, MPI_Co
 	coords[0] = coords[1] = coords[2] = -1;
 	memset(periods, 0x00, DOMAIN_DIM * sizeof(int));
 	memset(nprocs_per_dim, 0x00, DOMAIN_DIM * sizeof(int));
+
+	#ifdef NOSPLIT0
+	nprocs_per_dim[0] = 1;
+	#endif
+	#ifdef NOSPLIT1
+	nprocs_per_dim[1] = 1;
+	#endif
+	#ifdef NOSPLIT2
+	nprocs_per_dim[2] = 1;
+	#endif
+
 	if (nprocs_head > 0)
 		MPI_Dims_create(nprocs_head, DOMAIN_DIM, nprocs_per_dim);
 	if (comm_head != MPI_COMM_NULL)
