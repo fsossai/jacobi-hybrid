@@ -113,9 +113,11 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 			for (int z = LZ, k = 1; k <= NZ; z++, k++)
 			{
 				zval = -1.0 + dz * z;
-				F[INDEX3D(i, j, k, NY+2, NZ+2)] =
-					m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval) * (1.0 - zval * zval) +
-					2.0 * (-2.0 + xval * xval + yval * yval + zval * zval);
+				F[INDEX3D(i, j, k, NY + 2, NZ + 2)] =
+					m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval) * (1.0 - zval * zval)
+					- 2.0 * (1.0 - yval * yval) * (1.0 - zval * zval)
+					- 2.0 * (1.0 - xval * xval) * (1.0 - zval * zval)
+					- 2.0 * (1.0 - xval * xval) * (1.0 - yval * yval);
 			}
 		}
 	}
