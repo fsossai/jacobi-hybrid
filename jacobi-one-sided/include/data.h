@@ -5,6 +5,7 @@
 
 #define DOMAIN_DIM 3
 #define INDEX(i,j,k,N2,N3) ((i)*(N2)*(N3) + (j)*(N3) + (k))
+#define DEFAULT_LOCAL_SPLIT 0
 #define _CONFIRM { int __rank; MPI_Comm_rank(MPI_COMM_WORLD,&__rank); printf("[%2i] OK\n",__rank); fflush(stdout); }
 
 typedef struct
@@ -40,5 +41,6 @@ void print_subdomain(double* mat, instance_t* instance, char* format);
 void setup_shared_and_heads(int nheads_per_node, MPI_Comm* comm_shared, MPI_Comm* comm_head);
 void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_Comm* comm_cart);
 void compute_limits(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, instance_t* instance);
+void split_local_workload(MPI_Comm comm_shared, instance_t* instance);
 
 #endif // !DATA_H

@@ -45,9 +45,10 @@ int main(int argc, char* argv[])
 	int nsplits_per_dim[DOMAIN_DIM], coords[DOMAIN_DIM];
 	setup_topology(comm_head, nsplits_per_dim, coords, &comm_cart);
 
-	// computing subdomain offsets and sizes
+	// computing global and local subdomains' offsets and sizes
 	compute_limits(comm_cart, coords, nsplits_per_dim, &instance);
 	broadcast_data_shared(comm_shared, &instance);
+	split_local_workload(comm_shared, &instance);
 
 	initialize_problem(comm_cart, &instance);
 

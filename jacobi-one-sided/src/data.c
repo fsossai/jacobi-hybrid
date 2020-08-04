@@ -203,16 +203,49 @@ void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_C
 
 void compute_limits(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, instance_t * instance)
 {
-	int divisor, reminder;
-	for (int i = 0, index; i < DOMAIN_DIM; i++)
+	if (comm_cart != MPI_COMM_NULL)
 	{
-		divisor = instance->domain_sizes[i] / nsplits_per_dim[i];
-		reminder = instance->domain_sizes[i] % nsplits_per_dim[i];
-		index = coords[i];
-		instance->subdomain_offsets[i] = index * divisor + ((index <= reminder) ? index : reminder);
-		index = coords[i] + 1;
-		instance->subdomain_sizes[i] =
-			index * divisor + ((index <= reminder) ? index : reminder) -
-			instance->subdomain_offsets[i];
+		int divisor, reminder;
+		for (int i = 0, index; i < DOMAIN_DIM; i++)
+		{
+			divisor = instance->domain_sizes[i] / nsplits_per_dim[i];
+			reminder = instance->domain_sizes[i] % nsplits_per_dim[i];
+			index = coords[i];
+			instance->subdomain_offsets[i] = index * divisor + ((index <= reminder) ? index : reminder);
+			index = coords[i] + 1;
+			instance->subdomain_sizes[i] =
+				index * divisor + ((index <= reminder) ? index : reminder) -
+				instance->subdomain_offsets[i];
+		}
 	}
+}
+
+void split_local_workload(MPI_Comm comm_shared, instance_t *instance)
+{
+	int rank_shared, nprocs_shared;
+	MPI_Comm_rank(comm_shared, &rank_shared);
+	MPI_Comm_size(comm_shared, &nprocs_shared);
+
+	const int split_direction = DEFAULT_LOCAL_SPLIT;
+	#ifdef LOCAL_SPLIT_X
+	split_direction = 0;
+	#endif
+	#ifdef LOCAL_SPLIT_Y
+	split_direction = 1;
+	#endif
+	#ifdef LOCAL_SPLIT_Z
+	split_direction = 2;
+	#endif
+	instance->local_subdomain_split_direction = split_direction;
+
+	int divisor, reminder, index;
+	divisor = instance->subdomain_sizes[split_direction] / nprocs_shared;
+	reminder = instance->subdomain_sizes[split_direction] % nprocs_shared;
+	index = rank_shared;
+
+	instance->local_subdomain_offset = index * divisor + ((index <= reminder) ? index : reminder);
+	index = rank_shared + 1;
+	instance->local_subdomain_size =
+		index * divisor + ((index <= reminder) ? index : reminder) -
+		instance->local_subdomain_size;
 }
