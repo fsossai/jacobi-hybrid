@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 			int rank_shared = 666; //should never be displayed
 			MPI_Comm_rank(comm_shared, &rank_shared);
 			if (comm_head != MPI_COMM_NULL)
-				printf("w%2i s%2i c(%2i,%2i) ",
+				printf("w%2i s%2i c(%2i,%2i) \n",
 					rank_world, rank_shared,
 					coords[0], coords[1]);
 			/*printf("sd sizes %2i %2i, offs %3i %3i\n",
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 				(double)instance.performed_iterations *
 				(double)instance.subdomain_sizes[0] *
 				(double)instance.subdomain_sizes[1] /
-				local_timer * 1e-6 * 15.0);
+				local_timer * 1e-6 * 13.0);
 		}
 	}
 
