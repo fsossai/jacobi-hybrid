@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	initialize_problem(comm_cart, &instance);
 
 	double local_timer = -MPI_Wtime();
-	compute_jacobi(comm_cart, &instance);
+	compute_jacobi(comm_cart, comm_shared, &instance);
 	local_timer += MPI_Wtime();
 
 	const char show = 1;

@@ -5,6 +5,12 @@
 
 void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instance)
 {
+	const int OFFSETS[DOMAIN_DIM] =
+	{
+		instance->local_subdomain_offsets[0] + 1,
+		instance->local_subdomain_offsets[1] + 1,
+		instance->local_subdomain_offsets[2] + 1
+	};
 	const int U_NX = instance->subdomain_sizes[0] + 2;
 	const int U_NY = instance->subdomain_sizes[1] + 2;
 	const int U_NZ = instance->subdomain_sizes[2] + 2;
@@ -69,9 +75,9 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 	const int split_dir = instance->local_subdomain_split_direction;
 	const int N[DOMAIN_DIM] =
 	{ 
-		((split_dir == 0) ? instance->local_subdomain_size : instance->subdomain_sizes[0]),
-		((split_dir == 1) ? instance->local_subdomain_size : instance->subdomain_sizes[1]),
-		((split_dir == 2) ? instance->local_subdomain_size : instance->subdomain_sizes[2])
+		instance->local_subdomain_sizes[0],
+		instance->local_subdomain_sizes[1],
+		instance->local_subdomain_sizes[2]
 	};
 
 	double residual, partial;
@@ -104,25 +110,25 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 		// computation
 		residual = 0.0;
 		
-		for (int i = 0; i < N[0]; i++)
+		for (int i = 0, U_i = OFFSETS[0]; i < N[0]; i++, U_i++)
 		{
-			for (int j = 0; j < N[1]; j++)
+			for (int j = 0, U_j = OFFSETS[1]; j < N[1]; j++, U_j++)
 			{
-				for (int k = 0; k < N[2]; k++)
+				for (int k = 0, U_k = OFFSETS[2]; k < N[2]; k++, U_k++)
 				{
 					partial = (
-						ax * (U[INDEX(i - 1, j, k, U_NY, U_NZ)] +
-							U[INDEX(i + 1, j, k, U_NY, U_NZ)]) +
-						ay * (U[INDEX(i, j - 1, k, U_NY, U_NZ)] +
-							U[INDEX(i, j + 1, k, U_NY, U_NZ)]) +
-						az * (U[INDEX(i, j, k - 1, U_NY, U_NZ)] +
-							U[INDEX(i, j, k + 1, U_NY, U_NZ)]) +
-						bb * U[INDEX(i, j, k, U_NY, U_NZ)] -
-						F[INDEX(i, j, k, U_NY, U_NZ)]
+						ax * (U[INDEX(U_i - 1, U_j, U_k, U_NY, U_NZ)] +
+							U[INDEX(U_i + 1, U_j, U_k, U_NY, U_NZ)]) +
+						ay * (U[INDEX(U_i, U_j - 1, U_k, U_NY, U_NZ)] +
+							U[INDEX(U_i, U_j + 1, U_k, U_NY, U_NZ)]) +
+						az * (U[INDEX(U_i, U_j, U_k - 1, U_NY, U_NZ)] +
+							U[INDEX(U_i, U_j, U_k + 1, U_NY, U_NZ)]) +
+						bb * U[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] -
+						F[INDEX(i, j, k, N[1], N[2])]
 						) / bb;
 
-					Unew[INDEX(i, j, k, U_NY, U_NZ)] =
-						U[INDEX(i, j, k, U_NY, U_NZ)] - relax * partial;
+					Unew[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] =
+						U[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] - relax * partial;
 
 					residual += partial * partial;
 				}
