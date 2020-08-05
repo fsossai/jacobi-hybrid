@@ -81,12 +81,12 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 {
 	const int split_dir = instance->local_subdomain_split_direction;
 
-	const int LX = instance->subdomain_offsets[0] + ((split_dir == 0) ? instance->local_subdomain_offset : 0);
-	const int LY = instance->subdomain_offsets[1] + ((split_dir == 1) ? instance->local_subdomain_offset : 0);
-	const int LZ = instance->subdomain_offsets[2] + ((split_dir == 2) ? instance->local_subdomain_offset : 0);
-	const int NX = ((split_dir == 0) ? instance->local_subdomain_size : instance->subdomain_sizes[0]);
-	const int NY = ((split_dir == 1) ? instance->local_subdomain_size : instance->subdomain_sizes[1]);
-	const int NZ = ((split_dir == 2) ? instance->local_subdomain_size : instance->subdomain_sizes[2]);
+	const int LX = instance->subdomain_offsets[0] + instance->local_subdomain_offsets[0];
+	const int LY = instance->subdomain_offsets[1] + instance->local_subdomain_offsets[1];
+	const int LZ = instance->subdomain_offsets[2] + instance->local_subdomain_offsets[2];
+	const int NX = instance->local_subdomain_sizes[0];
+	const int NY = instance->local_subdomain_sizes[1];
+	const int NZ = instance->local_subdomain_sizes[2];
 
 	instance->U = NULL;
 	instance->F = (double*)malloc(NX * NY * NZ * sizeof(double));
@@ -233,7 +233,7 @@ void compute_local_workload(MPI_Comm comm_shared, instance_t * instance)
 	MPI_Comm_rank(comm_shared, &rank_shared);
 	MPI_Comm_size(comm_shared, &nprocs_shared);
 
-	const int split_direction = DEFAULT_LOCAL_SPLIT;
+	int split_direction = DEFAULT_LOCAL_SPLIT;
 	#ifdef LOCAL_SPLIT_X
 	split_direction = 0;
 	#endif
@@ -245,14 +245,19 @@ void compute_local_workload(MPI_Comm comm_shared, instance_t * instance)
 	#endif
 	instance->local_subdomain_split_direction = split_direction;
 
+	memset(instance->local_subdomain_offsets, 0x00, DOMAIN_DIM * sizeof(int));
+	memcpy(instance->local_subdomain_sizes, instance->subdomain_sizes, DOMAIN_DIM * sizeof(int));
+
 	int divisor, reminder, index;
 	divisor = instance->subdomain_sizes[split_direction] / nprocs_shared;
 	reminder = instance->subdomain_sizes[split_direction] % nprocs_shared;
-	index = rank_shared;
 
-	instance->local_subdomain_offset = index * divisor + ((index <= reminder) ? index : reminder);
+	index = rank_shared;
+	instance->local_subdomain_offsets[split_direction] =
+		index * divisor + ((index <= reminder) ? index : reminder);
+
 	index = rank_shared + 1;
-	instance->local_subdomain_size =
+	instance->local_subdomain_sizes[split_direction] =
 		index * divisor + ((index <= reminder) ? index : reminder) -
-		instance->local_subdomain_size;
+		instance->local_subdomain_offsets[split_direction];
 }

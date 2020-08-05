@@ -14,8 +14,8 @@ typedef struct
 	int subdomain_sizes[DOMAIN_DIM];
 	int subdomain_offsets[DOMAIN_DIM];
 	int local_subdomain_split_direction;
-	int local_subdomain_offset;
-	int local_subdomain_size;
+	int local_subdomain_offsets[DOMAIN_DIM];
+	int local_subdomain_sizes[DOMAIN_DIM];
 
 	double alpha;
 	double residual;
