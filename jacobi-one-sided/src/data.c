@@ -79,24 +79,31 @@ void broadcast_data_shared(MPI_Comm comm_shared, instance_t * instance)
 
 void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 {
-	if (comm_cart == MPI_COMM_NULL)
-		return;
+	const int split_dir = instance->local_subdomain_split_direction;
 
-	const int LX = instance->subdomain_offsets[0];
-	const int LY = instance->subdomain_offsets[1];
-	const int LZ = instance->subdomain_offsets[2];
-	const int NX = instance->subdomain_sizes[0];
-	const int NY = instance->subdomain_sizes[1];
-	const int NZ = instance->subdomain_sizes[2];
+	const int LX = instance->subdomain_offsets[0] + ((split_dir == 0) ? instance->local_subdomain_offset : 0);
+	const int LY = instance->subdomain_offsets[1] + ((split_dir == 1) ? instance->local_subdomain_offset : 0);
+	const int LZ = instance->subdomain_offsets[2] + ((split_dir == 2) ? instance->local_subdomain_offset : 0);
+	const int NX = ((split_dir == 0) ? instance->local_subdomain_size : instance->subdomain_sizes[0]);
+	const int NY = ((split_dir == 1) ? instance->local_subdomain_size : instance->subdomain_sizes[1]);
+	const int NZ = ((split_dir == 2) ? instance->local_subdomain_size : instance->subdomain_sizes[2]);
 
-	instance->U = (double*)calloc((NX + 2) * (NY + 2) * (NZ + 2), sizeof(double));
-	instance->F = (double*)malloc((NX + 2) * (NY + 2) * (NZ + 2) * sizeof(double));
+	instance->U = NULL;
+	instance->F = (double*)malloc(NX * NY * NZ * sizeof(double));
+
+	if (comm_cart != MPI_COMM_NULL)
+	{
+		instance->U = (double*)calloc(
+			(instance->subdomain_sizes[0] + 2) *
+			(instance->subdomain_sizes[1] + 2) *
+			(instance->subdomain_sizes[2] + 2), sizeof(double));
+	}
+	
+	double* F = instance->F;
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1);
 	instance->dx[1] = 2.0 / (instance->domain_sizes[1] - 1);
 	instance->dx[2] = 2.0 / (instance->domain_sizes[2] - 1);
 
-	double* U = instance->U;
-	double* F = instance->F;
 	const double dx = instance->dx[0];
 	const double dy = instance->dx[1];
 	const double dz = instance->dx[2];
@@ -104,16 +111,16 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 
 	double xval, yval, zval;
 
-	for (int x = LX, i = 1; i <= NX; x++, i++)
+	for (int x = LX, i = 0; i < NX; x++, i++)
 	{
 		xval = -1.0 + dx * x;
-		for (int y = LY, j = 1; j <= NY; y++, j++)
+		for (int y = LY, j = 0; j < NY; y++, j++)
 		{
 			yval = -1.0 + dy * y;
-			for (int z = LZ, k = 1; k <= NZ; z++, k++)
+			for (int z = LZ, k = 0; k < NZ; z++, k++)
 			{
 				zval = -1.0 + dz * z;
-				F[INDEX(i, j, k, NY + 2, NZ + 2)] =
+				F[INDEX(i, j, k, NY, NZ)] =
 					m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval) * (1.0 - zval * zval)
 					- 2.0 * (1.0 - yval * yval) * (1.0 - zval * zval)
 					- 2.0 * (1.0 - xval * xval) * (1.0 - zval * zval)
@@ -201,7 +208,7 @@ void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_C
 	}
 }
 
-void compute_limits(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, instance_t * instance)
+void compute_subdomains(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, instance_t * instance)
 {
 	if (comm_cart != MPI_COMM_NULL)
 	{
@@ -220,7 +227,7 @@ void compute_limits(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, insta
 	}
 }
 
-void split_local_workload(MPI_Comm comm_shared, instance_t *instance)
+void compute_local_workload(MPI_Comm comm_shared, instance_t * instance)
 {
 	int rank_shared, nprocs_shared;
 	MPI_Comm_rank(comm_shared, &rank_shared);
