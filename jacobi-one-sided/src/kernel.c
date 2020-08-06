@@ -5,6 +5,9 @@
 
 void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instance)
 {
+	int rank_world;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
+
 	const int OFFSETS[DOMAIN_DIM] =
 	{
 		instance->local_subdomain_offsets[0] + 1,
@@ -133,18 +136,18 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 			}
 		}
 		// getting total residual inside a shared memory island
-		double local_residual;
-		MPI_Reduce(&residual, &local_residual, 1, MPI_DOUBLE, MPI_SUM, 0, comm_shared);
+		double shared_residual;
+		MPI_Reduce(&residual, &shared_residual, 1, MPI_DOUBLE, MPI_SUM, 0, comm_shared);
 
-		// getting total residual of the whole computation
+		// getting total residual of the whole iteration
 		double total_residual;
 		if (comm_cart != MPI_COMM_NULL)
-			MPI_Allreduce(&local_residual, &total_residual, 1, MPI_DOUBLE, MPI_SUM, comm_cart);
+			MPI_Allreduce(&shared_residual, &total_residual, 1, MPI_DOUBLE, MPI_SUM, comm_cart);
 
-		total_residual = sqrt(total_residual) /
-			instance->subdomain_sizes[0] *
-			instance->subdomain_sizes[1] *
-			instance->subdomain_sizes[2];
+		total_residual = sqrt(total_residual) / (
+			instance->domain_sizes[0] *
+			instance->domain_sizes[1] *
+			instance->domain_sizes[2]);
 
 		// swapping pointers
 		double* temp = U;

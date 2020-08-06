@@ -173,7 +173,7 @@ void setup_shared_and_heads(int nheads_per_node, MPI_Comm * comm_shared, MPI_Com
 {
 	int rank_shared, nprocs_shared, color;
 
-	#ifdef PURE_MPI
+	#ifdef NO_SHARED_MEMORY
 	int rank_world;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
 	MPI_Comm_split(MPI_COMM_WORLD, rank_world, 0, comm_shared);
@@ -255,7 +255,7 @@ void compute_local_workload(MPI_Comm comm_shared, instance_t * instance)
 	MPI_Comm_rank(comm_shared, &rank_shared);
 	MPI_Comm_size(comm_shared, &nprocs_shared);
 
-	int split_direction = DEFAULT_LOCAL_SPLIT;
+	int split_direction = DEFAULT_SHARED_SPLIT_DIRECTION;
 	#ifdef LOCAL_SPLIT_X
 	split_direction = 0;
 	#endif

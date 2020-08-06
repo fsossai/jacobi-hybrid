@@ -20,13 +20,26 @@ int main(int argc, char* argv[])
 		read_input(stdin, &instance);*/
 	if (rank_world == 0) // debug
 	{
-		instance.domain_sizes[0] = 4;
-		instance.domain_sizes[1] = 5;
-		instance.domain_sizes[2] = 6;
+		instance.domain_sizes[0] = 300;
+		instance.domain_sizes[1] = 300;
+		instance.domain_sizes[2] = 300;
 		instance.alpha = 0.8;
 		instance.relaxation = 1.0;
-		instance.tolerance = 1e-16;
+		instance.tolerance = 1e-10;
 		instance.max_iterations = 100;
+	}
+
+	// printing input data
+	if (rank_world == 0)
+	{
+		printf("Domain size\t\t: %ix%ix%i\n",
+			instance.domain_sizes[0],
+			instance.domain_sizes[1],
+			instance.domain_sizes[2]);
+		printf("Alpha\t\t\t: %.5lf\n", instance.alpha);
+		printf("Relaxation\t\t: %.5lf\n", instance.relaxation);
+		printf("Tolerance\t\t: %e\n", instance.tolerance);
+		printf("Max iteration\t\t: %i\n", instance.max_iterations);
 	}
 
 	// creating shared and head communicators
@@ -53,7 +66,7 @@ int main(int argc, char* argv[])
 	allocate_shared_resources(comm_cart, comm_shared, &instance);
 
 	double local_timer = -MPI_Wtime();
-	//compute_jacobi(comm_cart, comm_shared, &instance);
+	compute_jacobi(comm_cart, comm_shared, &instance);
 	local_timer += MPI_Wtime();
 
 	const char show = 1;
@@ -81,12 +94,9 @@ int main(int argc, char* argv[])
 				instance.local_subdomain_sizes[2]);
 			//printf(" alpha: %5.2lf, maxit %i, tol %lf relax %lf\n",
 			//	instance.alpha, instance.max_iterations, instance.tolerance, instance.relaxation);
-			if (comm_head != MPI_COMM_NULL)
-			{
-				//print_subdomain(instance.U, &instance, "%8.3lf ");
-				//printf("\n --------------------------\n\n");
-			}
-			print_F(&instance, "%8.3lf ");
+			//if (comm_head != MPI_COMM_NULL)
+			//	print_subdomain(instance.U, &instance, "%8.3lf ");
+			//print_F(&instance, "%8.3lf ");
 			fflush(stdout);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -96,17 +106,33 @@ int main(int argc, char* argv[])
 	{
 		double iteration_time_avg;
 		MPI_Reduce(&instance.total_computation_time, &iteration_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, comm_head);
-		iteration_time_avg /= nprocs_head * instance.performed_iterations;
+		iteration_time_avg /= (double)nprocs_head * (double)instance.performed_iterations;
+
 		if (rank_world == 0)
 		{
-			printf("Total elapsed time\t: %.3lf s\n", local_timer);
-			printf("Average iteration time\t: %.3lf ms\n", iteration_time_avg * 1e3);
-			printf("Performance\t\t: %.3lf MFlops\n",
+			int shared_mem = 1;
+			#ifdef NO_SHARED_MEMORY
+			shared_mem = 0;
+			#endif 
+
+			printf("Performed iterations\t\t\t: %i\n", instance.performed_iterations);
+			printf("Residual\t\t\t\t: %e\n", instance.residual);
+			printf("---------------------------------------------------------------\n");
+			printf("Using shared memory\t\t\t: %s\n", (shared_mem ? "Yes" : "No"));
+			if (shared_mem)
+				printf("Shared subdomain split direction\t: %i\n", instance.local_subdomain_split_direction);
+			printf("Cartesian topology arrangement\t\t: %ix%ix%i\n",
+				nsplits_per_dim[0],
+				nsplits_per_dim[1],
+				nsplits_per_dim[2]);
+			printf("Total elapsed time\t\t\t: %.3lf s\n", local_timer);
+			printf("Average time per iteration\t\t: %.3lf ms\n", iteration_time_avg * 1e3);
+			printf("Performance\t\t\t\t: %.3lf MFlops\n",
 				(double)instance.performed_iterations *
 				(double)instance.domain_sizes[0] *
 				(double)instance.domain_sizes[1] *
 				(double)instance.domain_sizes[2] /
-				local_timer * 1e-6 * 16.0);
+				local_timer * 1e-6 * (double)KERNEL_FLOPS);
 		}
 	}
 

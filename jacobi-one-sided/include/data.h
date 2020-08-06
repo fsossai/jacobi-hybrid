@@ -5,8 +5,7 @@
 
 #define DOMAIN_DIM 3
 #define INDEX(i,j,k,N2,N3) ((i)*(N2)*(N3) + (j)*(N3) + (k))
-#define DEFAULT_LOCAL_SPLIT 0
-#define _CONFIRM { int __rank; MPI_Comm_rank(MPI_COMM_WORLD,&__rank); printf("[%2i] OK\n",__rank); fflush(stdout); }
+#define DEFAULT_SHARED_SPLIT_DIRECTION 0
 
 typedef struct
 {

@@ -4,6 +4,8 @@
 #include <mpi.h>
 #include "data.h"
 
+#define KERNEL_FLOPS 16
+
 void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instance);
 
 #endif // !KERNEL_H
