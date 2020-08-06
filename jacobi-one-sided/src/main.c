@@ -49,8 +49,8 @@ int main(int argc, char* argv[])
 	compute_subdomains(comm_cart, coords, nsplits_per_dim, &instance);
 	broadcast_data_shared(comm_shared, &instance);
 	compute_local_workload(comm_shared, &instance);
-
 	initialize_problem(comm_cart, &instance);
+	allocate_shared_resources(comm_cart, comm_shared, &instance);
 
 	double local_timer = -MPI_Wtime();
 	compute_jacobi(comm_cart, comm_shared, &instance);

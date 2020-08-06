@@ -132,8 +132,12 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 
 void close_problem(instance_t * instance)
 {
-	if (instance->U)
-		free(instance->U);
+	MPI_Win_fence(0, instance->win_U);
+	MPI_Win_free(&instance->win_U);
+
+	MPI_Win_fence(0, instance->win_Unew);
+	MPI_Win_free(&instance->win_Unew);
+
 	if (instance->F)
 		free(instance->F);
 }
@@ -260,4 +264,25 @@ void compute_local_workload(MPI_Comm comm_shared, instance_t * instance)
 	instance->local_subdomain_sizes[split_direction] =
 		index * divisor + ((index <= reminder) ? index : reminder) -
 		instance->local_subdomain_offsets[split_direction];
+}
+
+void allocate_shared_resources(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t *instance)
+{
+	MPI_Aint shared_size = (MPI_Aint)
+		(instance->subdomain_sizes[0] + 2) *
+		(instance->subdomain_sizes[1] + 2) *
+		(instance->subdomain_sizes[2] + 2);
+
+	if (comm_cart == MPI_COMM_NULL)
+		shared_size = (MPI_Aint)0;
+
+	MPI_Win_allocate_shared(shared_size, sizeof(double), MPI_INFO_NULL, comm_shared, &instance->U, &instance->win_U);
+	MPI_Win_allocate_shared(shared_size, sizeof(double), MPI_INFO_NULL, comm_shared, &instance->Unew, &instance->win_Unew);
+
+	int head = 0;
+	int disp_unit;
+	MPI_Aint actual_size;
+
+	MPI_Win_shared_query(instance->win_U, head, &actual_size, &disp_unit, &instance->U);
+	MPI_Win_shared_query(instance->win_Unew, head, &actual_size, &disp_unit, &instance->Unew);
 }

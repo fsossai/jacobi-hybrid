@@ -26,7 +26,11 @@ typedef struct
 	double total_computation_time;
 
 	double* U;
+	double* Unew;
 	double* F;
+
+	MPI_Win win_U;
+	MPI_Win win_Unew;
 
 	double dx[DOMAIN_DIM];
 
@@ -42,5 +46,6 @@ void setup_shared_and_heads(int nheads_per_node, MPI_Comm* comm_shared, MPI_Comm
 void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_Comm* comm_cart);
 void compute_subdomains(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, instance_t* instance);
 void compute_local_workload(MPI_Comm comm_shared, instance_t* instance);
+void allocate_shared_resources(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instance);
 
 #endif // !DATA_H
