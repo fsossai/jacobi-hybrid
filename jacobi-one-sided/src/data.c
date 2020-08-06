@@ -53,22 +53,24 @@ void broadcast_input_data_head(MPI_Comm comm_head, instance_t * instance)
 
 void broadcast_data_shared(MPI_Comm comm_shared, instance_t * instance)
 {
-	MPI_Aint displacements[5];
-	displacements[0] = (MPI_Aint)offsetof(instance_t, subdomain_sizes);
-	displacements[1] = (MPI_Aint)offsetof(instance_t, alpha);
-	displacements[2] = (MPI_Aint)offsetof(instance_t, relaxation);
-	displacements[3] = (MPI_Aint)offsetof(instance_t, tolerance);
-	displacements[4] = (MPI_Aint)offsetof(instance_t, max_iterations);
+	MPI_Aint displacements[6];
+	displacements[0] = (MPI_Aint)offsetof(instance_t, domain_sizes);
+	displacements[1] = (MPI_Aint)offsetof(instance_t, subdomain_sizes);
+	displacements[2] = (MPI_Aint)offsetof(instance_t, alpha);
+	displacements[3] = (MPI_Aint)offsetof(instance_t, relaxation);
+	displacements[4] = (MPI_Aint)offsetof(instance_t, tolerance);
+	displacements[5] = (MPI_Aint)offsetof(instance_t, max_iterations);
 
-	int block_lengths[5];
+	int block_lengths[6];
 	block_lengths[0] = DOMAIN_DIM;
-	for (int i = 1; i < 5; i++)
+	block_lengths[1] = DOMAIN_DIM;
+	for (int i = 2; i < 6; i++)
 		block_lengths[i] = 1;
 
-	MPI_Datatype types[5] = { MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
+	MPI_Datatype types[6] = { MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
 
 	MPI_Datatype parameters_struct;
-	MPI_Type_create_struct(5, block_lengths, displacements, types, &parameters_struct);
+	MPI_Type_create_struct(6, block_lengths, displacements, types, &parameters_struct);
 	MPI_Type_commit(&parameters_struct);
 
 	int root;
@@ -88,7 +90,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	const int NY = instance->local_subdomain_sizes[1];
 	const int NZ = instance->local_subdomain_sizes[2];
 
-	instance->F = (double*)malloc(NX * NY * NZ * sizeof(double));
+	instance->F = (double*)calloc(NX * NY * NZ , sizeof(double));
 
 	double* F = instance->F;
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1);
@@ -144,6 +146,23 @@ void print_subdomain(double* mat, instance_t * instance, char* format)
 					mat[INDEX(i, j, k,
 						instance->subdomain_sizes[1] + 2,
 						instance->subdomain_sizes[2] + 2)]);
+			printf("\n");
+		}
+		printf("\n");
+	}
+}
+
+void print_F(instance_t* instance, char* format)
+{
+	for (int i = 0; i < instance->local_subdomain_sizes[0]; i++)
+	{
+		for (int j = 0; j < instance->local_subdomain_sizes[1]; j++)
+		{
+			for (int k = 0; k < instance->local_subdomain_sizes[2]; k++)
+				printf(format,
+					instance->F[INDEX(i, j, k,
+						instance->local_subdomain_sizes[1],
+						instance->local_subdomain_sizes[2])]);
 			printf("\n");
 		}
 		printf("\n");

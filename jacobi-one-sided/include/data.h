@@ -42,6 +42,7 @@ void broadcast_data_shared(MPI_Comm comm_shared, instance_t* instance);
 void initialize_problem(MPI_Comm comm_cart, instance_t* instance);
 void close_problem(instance_t* instance);
 void print_subdomain(double* mat, instance_t* instance, char* format);
+void print_F(instance_t* instance, char* format);
 void setup_shared_and_heads(int nheads_per_node, MPI_Comm* comm_shared, MPI_Comm* comm_head);
 void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_Comm* comm_cart);
 void compute_subdomains(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, instance_t* instance);

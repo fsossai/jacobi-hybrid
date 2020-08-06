@@ -82,7 +82,11 @@ int main(int argc, char* argv[])
 			//printf(" alpha: %5.2lf, maxit %i, tol %lf relax %lf\n",
 			//	instance.alpha, instance.max_iterations, instance.tolerance, instance.relaxation);
 			if (comm_head != MPI_COMM_NULL)
-				print_subdomain(instance.U, &instance, "%8.3lf ");
+			{
+				//print_subdomain(instance.U, &instance, "%8.3lf ");
+				//printf("\n --------------------------\n\n");
+			}
+			print_F(&instance, "%8.3lf ");
 			fflush(stdout);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
