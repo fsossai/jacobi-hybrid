@@ -89,7 +89,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	const int NZ = instance->local_subdomain_sizes[2];
 
 	instance->F = (double*)malloc(NX * NY * NZ * sizeof(double));
-	
+
 	double* F = instance->F;
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1);
 	instance->dx[1] = 2.0 / (instance->domain_sizes[1] - 1);
@@ -153,7 +153,14 @@ void print_subdomain(double* mat, instance_t * instance, char* format)
 void setup_shared_and_heads(int nheads_per_node, MPI_Comm * comm_shared, MPI_Comm * comm_head)
 {
 	int rank_shared, nprocs_shared, color;
+
+	#ifdef PURE_MPI
+	int rank_world;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
+	MPI_Comm_split(MPI_COMM_WORLD, rank_world, 0, comm_shared);
+	#else
 	MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, comm_shared);
+	#endif
 	MPI_Comm_rank(*comm_shared, &rank_shared);
 	MPI_Comm_size(*comm_shared, &nprocs_shared);
 
@@ -169,7 +176,7 @@ void setup_shared_and_heads(int nheads_per_node, MPI_Comm * comm_shared, MPI_Com
 
 void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_Comm * comm_cart)
 {
-	int rank_head, nprocs_head = 0;
+	int rank_head, nprocs_head;
 	if (comm_head != MPI_COMM_NULL)
 	{
 		MPI_Comm_rank(comm_head, &rank_head);
@@ -192,10 +199,11 @@ void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_C
 	nsplits_per_dim[2] = 1;
 	#endif
 
-	if (nprocs_head > 0)  //?
-		MPI_Dims_create(nprocs_head, DOMAIN_DIM, nsplits_per_dim);
 	if (comm_head != MPI_COMM_NULL)
+	{
+		MPI_Dims_create(nprocs_head, DOMAIN_DIM, nsplits_per_dim);
 		MPI_Cart_create(comm_head, DOMAIN_DIM, nsplits_per_dim, periods, 0, comm_cart);
+	}
 	if (*comm_cart != MPI_COMM_NULL)
 	{
 		MPI_Comm_rank(*comm_cart, &rank_cart);
@@ -257,7 +265,7 @@ void compute_local_workload(MPI_Comm comm_shared, instance_t * instance)
 		instance->local_subdomain_offsets[split_direction];
 }
 
-void allocate_shared_resources(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t *instance)
+void allocate_shared_resources(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t * instance)
 {
 	MPI_Aint shared_size = (MPI_Aint)
 		(instance->subdomain_sizes[0] + 2) *

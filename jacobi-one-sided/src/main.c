@@ -20,9 +20,9 @@ int main(int argc, char* argv[])
 		read_input(stdin, &instance);*/
 	if (rank_world == 0) // debug
 	{
-		instance.domain_sizes[0] = 1000;
-		instance.domain_sizes[1] = 1000;
-		instance.domain_sizes[2] = 10;
+		instance.domain_sizes[0] = 4;
+		instance.domain_sizes[1] = 5;
+		instance.domain_sizes[2] = 6;
 		instance.alpha = 0.8;
 		instance.relaxation = 1.0;
 		instance.tolerance = 1e-16;
@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	allocate_shared_resources(comm_cart, comm_shared, &instance);
 
 	double local_timer = -MPI_Wtime();
-	compute_jacobi(comm_cart, comm_shared, &instance);
+	//compute_jacobi(comm_cart, comm_shared, &instance);
 	local_timer += MPI_Wtime();
 
 	const char show = 1;
@@ -81,8 +81,8 @@ int main(int argc, char* argv[])
 				instance.local_subdomain_sizes[2]);
 			//printf(" alpha: %5.2lf, maxit %i, tol %lf relax %lf\n",
 			//	instance.alpha, instance.max_iterations, instance.tolerance, instance.relaxation);
-			//if (rank_shared == 0)
-			//	print_subdomain(instance.U, &instance, "%8.3lf ");
+			if (comm_head != MPI_COMM_NULL)
+				print_subdomain(instance.U, &instance, "%8.3lf ");
 			fflush(stdout);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -99,9 +99,9 @@ int main(int argc, char* argv[])
 			printf("Average iteration time\t: %.3lf ms\n", iteration_time_avg * 1e3);
 			printf("Performance\t\t: %.3lf MFlops\n",
 				(double)instance.performed_iterations *
-				(double)instance.subdomain_sizes[0] *
-				(double)instance.subdomain_sizes[1] *
-				(double)instance.subdomain_sizes[2] /
+				(double)instance.domain_sizes[0] *
+				(double)instance.domain_sizes[1] *
+				(double)instance.domain_sizes[2] /
 				local_timer * 1e-6 * 16.0);
 		}
 	}
