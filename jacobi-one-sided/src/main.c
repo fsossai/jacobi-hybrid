@@ -66,17 +66,23 @@ int main(int argc, char* argv[])
 			printf("w%2i s%2i c(%2i,%2i,%2i) ",
 				rank_world, rank_shared,
 				coords[0], coords[1], coords[2]);
-			printf("sd sizes %2i %2i %2i, offs %3i %3i %3i\n",
+			printf("sd sizes %5i  %5i %5i, offs (%5i+%4i,%5i+%4i,%5i+%4i) lsdsizes (%4i %4i %4i)\n",
 				instance.subdomain_sizes[0],
 				instance.subdomain_sizes[1],
 				instance.subdomain_sizes[2],
 				instance.subdomain_offsets[0],
+				instance.local_subdomain_offsets[0],
 				instance.subdomain_offsets[1],
-				instance.subdomain_offsets[2]);
-			printf(" alpha: %5.2lf, maxit %i, tol %lf relax %lf\n",
-				instance.alpha, instance.max_iterations, instance.tolerance, instance.relaxation);
-			if (rank_shared == 0)
-				;// print_subdomain(instance.U, &instance, "%8.3lf ");
+				instance.local_subdomain_offsets[1],
+				instance.subdomain_offsets[2],
+				instance.local_subdomain_offsets[2],
+				instance.local_subdomain_sizes[0],
+				instance.local_subdomain_sizes[1],
+				instance.local_subdomain_sizes[2]);
+			//printf(" alpha: %5.2lf, maxit %i, tol %lf relax %lf\n",
+			//	instance.alpha, instance.max_iterations, instance.tolerance, instance.relaxation);
+			//if (rank_shared == 0)
+			//	print_subdomain(instance.U, &instance, "%8.3lf ");
 			fflush(stdout);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -91,7 +97,7 @@ int main(int argc, char* argv[])
 		{
 			printf("Total elapsed time\t: %.3lf s\n", local_timer);
 			printf("Average iteration time\t: %.3lf ms\n", iteration_time_avg * 1e3);
-			printf("Performance on rank 0\t: %.3lf MFlops\n",
+			printf("Performance\t\t: %.3lf MFlops\n",
 				(double)instance.performed_iterations *
 				(double)instance.subdomain_sizes[0] *
 				(double)instance.subdomain_sizes[1] *

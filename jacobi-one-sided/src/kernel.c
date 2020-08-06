@@ -16,9 +16,7 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 	const int U_NZ = instance->subdomain_sizes[2] + 2;
 
 	double* U = instance->U;
-	double* Unew = NULL;
-	if (comm_cart != MPI_COMM_NULL)
-		Unew = (double*)malloc(U_NX * U_NY * U_NZ * sizeof(double));
+	double* Unew = instance->Unew;
 
 	const double* F = instance->F;
 	const double ax = 1.0 / (instance->dx[0] * instance->dx[0]);
@@ -158,7 +156,6 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 	}
 	timer += MPI_Wtime();
 	instance->total_computation_time = timer;
-	free(Unew);
 
 	for (int i = 0; i < DOMAIN_DIM; i++)
 	{

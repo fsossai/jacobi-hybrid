@@ -88,16 +88,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	const int NY = instance->local_subdomain_sizes[1];
 	const int NZ = instance->local_subdomain_sizes[2];
 
-	instance->U = NULL;
 	instance->F = (double*)malloc(NX * NY * NZ * sizeof(double));
-
-	if (comm_cart != MPI_COMM_NULL)
-	{
-		instance->U = (double*)calloc(
-			(instance->subdomain_sizes[0] + 2) *
-			(instance->subdomain_sizes[1] + 2) *
-			(instance->subdomain_sizes[2] + 2), sizeof(double));
-	}
 	
 	double* F = instance->F;
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1);
@@ -201,7 +192,7 @@ void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_C
 	nsplits_per_dim[2] = 1;
 	#endif
 
-	if (nprocs_head > 0)
+	if (nprocs_head > 0)  //?
 		MPI_Dims_create(nprocs_head, DOMAIN_DIM, nsplits_per_dim);
 	if (comm_head != MPI_COMM_NULL)
 		MPI_Cart_create(comm_head, DOMAIN_DIM, nsplits_per_dim, periods, 0, comm_cart);
@@ -271,7 +262,7 @@ void allocate_shared_resources(MPI_Comm comm_cart, MPI_Comm comm_shared, instanc
 	MPI_Aint shared_size = (MPI_Aint)
 		(instance->subdomain_sizes[0] + 2) *
 		(instance->subdomain_sizes[1] + 2) *
-		(instance->subdomain_sizes[2] + 2);
+		(instance->subdomain_sizes[2] + 2) * sizeof(double);
 
 	if (comm_cart == MPI_COMM_NULL)
 		shared_size = (MPI_Aint)0;
