@@ -4,8 +4,14 @@
 #include <string.h>
 #include "data.h"
 
-void read_input(FILE* input, instance_t* instance)
+void read_input(instance_t* instance)
 {
+	FILE* input = instance->input_stream;
+	if (input == NULL)
+		input = stdin;
+
+	printf("Reading instance data from standard input.\n");
+
 	for (int i = 0; i < DOMAIN_DIM; i++)
 		fscanf(input, "%i", &instance->domain_sizes[i]);
 	fscanf(input, "%lf", &instance->alpha);

@@ -5,6 +5,7 @@
 #include "data.h"
 #include "kernel.h"
 #include "arguments.h"
+
 #define MASTER 0
 
 void print_input_info(instance_t* instance);
@@ -22,10 +23,11 @@ int main(int argc, char* argv[])
 	instance_t instance;
 	memset(&instance, 0x00, sizeof(instance_t));
 
-	int args_error = 0;
+	int args_error;
 	if (rank_world == MASTER)
 		args_error = parse_command_line_arguments(argc, argv, &instance);
 
+	// broadcasting errors and terminating is necessary
 	MPI_Bcast(&args_error, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	if (args_error == ERROR_PARSING_ARGUMENTS)
 	{
@@ -33,8 +35,9 @@ int main(int argc, char* argv[])
 		return (rank_world == MASTER) ? ERROR_PARSING_ARGUMENTS : 0;
 	}
 
+	// only master process reads problem data from the input file
 	if (rank_world == MASTER)
-		read_input(instance.input_stream, &instance);
+		read_input(&instance);
 
 	// printing input data
 	print_input_info(&instance);
