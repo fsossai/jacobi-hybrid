@@ -23,22 +23,25 @@ void read_input(instance_t* instance)
 
 void broadcast_input_data_head(MPI_Comm comm_head, instance_t * instance)
 {
-	MPI_Aint displacements[5];
+	MPI_Aint displacements[7];
 	displacements[0] = (MPI_Aint)offsetof(instance_t, domain_sizes);
-	displacements[1] = (MPI_Aint)offsetof(instance_t, alpha);
-	displacements[2] = (MPI_Aint)offsetof(instance_t, relaxation);
-	displacements[3] = (MPI_Aint)offsetof(instance_t, tolerance);
-	displacements[4] = (MPI_Aint)offsetof(instance_t, max_iterations);
+	displacements[1] = (MPI_Aint)offsetof(instance_t, cart_splits);
+	displacements[2] = (MPI_Aint)offsetof(instance_t, local_subdomain_split_direction);
+	displacements[3] = (MPI_Aint)offsetof(instance_t, alpha);
+	displacements[4] = (MPI_Aint)offsetof(instance_t, relaxation);
+	displacements[5] = (MPI_Aint)offsetof(instance_t, tolerance);
+	displacements[6] = (MPI_Aint)offsetof(instance_t, max_iterations);
 
-	int block_lengths[5];
+	int block_lengths[7];
 	block_lengths[0] = DOMAIN_DIM;
-	for (int i = 1; i < 5; i++)
+	block_lengths[1] = DOMAIN_DIM;
+	for (int i = 2; i < 7; i++)
 		block_lengths[i] = 1;
 
-	MPI_Datatype types[5] = { MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
+	MPI_Datatype types[7] = { MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
 
 	MPI_Datatype parameters_struct;
-	MPI_Type_create_struct(5, block_lengths, displacements, types, &parameters_struct);
+	MPI_Type_create_struct(7, block_lengths, displacements, types, &parameters_struct);
 	MPI_Type_commit(&parameters_struct);
 
 	int root;
@@ -50,24 +53,27 @@ void broadcast_input_data_head(MPI_Comm comm_head, instance_t * instance)
 
 void broadcast_data_shared(MPI_Comm comm_shared, instance_t * instance)
 {
-	MPI_Aint displacements[6];
+	MPI_Aint displacements[8];
 	displacements[0] = (MPI_Aint)offsetof(instance_t, domain_sizes);
 	displacements[1] = (MPI_Aint)offsetof(instance_t, subdomain_sizes);
-	displacements[2] = (MPI_Aint)offsetof(instance_t, alpha);
-	displacements[3] = (MPI_Aint)offsetof(instance_t, relaxation);
-	displacements[4] = (MPI_Aint)offsetof(instance_t, tolerance);
-	displacements[5] = (MPI_Aint)offsetof(instance_t, max_iterations);
+	displacements[2] = (MPI_Aint)offsetof(instance_t, subdomain_offsets);
+	displacements[3] = (MPI_Aint)offsetof(instance_t, local_subdomain_split_direction);
+	displacements[4] = (MPI_Aint)offsetof(instance_t, alpha);
+	displacements[5] = (MPI_Aint)offsetof(instance_t, relaxation);
+	displacements[6] = (MPI_Aint)offsetof(instance_t, tolerance);
+	displacements[7] = (MPI_Aint)offsetof(instance_t, max_iterations);
 
-	int block_lengths[6];
+	int block_lengths[8];
 	block_lengths[0] = DOMAIN_DIM;
 	block_lengths[1] = DOMAIN_DIM;
-	for (int i = 2; i < 6; i++)
+	block_lengths[2] = DOMAIN_DIM;
+	for (int i = 3; i < 8; i++)
 		block_lengths[i] = 1;
 
-	MPI_Datatype types[6] = { MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
+	MPI_Datatype types[8] = { MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_INT };
 
 	MPI_Datatype parameters_struct;
-	MPI_Type_create_struct(6, block_lengths, displacements, types, &parameters_struct);
+	MPI_Type_create_struct(8, block_lengths, displacements, types, &parameters_struct);
 	MPI_Type_commit(&parameters_struct);
 
 	int root;
@@ -168,23 +174,58 @@ void print_F(instance_t * instance, char* format)
 
 void setup_shared_and_heads(instance_t * instance, MPI_Comm * comm_shared, MPI_Comm * comm_head)
 {
-	int rank_world, rank_shared, nprocs_shared, color;
+	int rank_world, rank_shared, nprocs_shared, color, root;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
+	MPI_Bcast(&instance->use_shared_memory, 1, MPI_INT, root = 0, MPI_COMM_WORLD);
+	MPI_Bcast(&instance->heads_per_shared_region, 1, MPI_INT, root = 0, MPI_COMM_WORLD);
 
 	if (instance->use_shared_memory)
-		MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, comm_shared);
+	{
+		MPI_Comm comm_physical_shared;
+		int rank_physical_shared, nprocs_physical_shared;
+		MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &comm_physical_shared);
+		MPI_Comm_rank(comm_physical_shared, &rank_physical_shared);
+		MPI_Comm_size(comm_physical_shared, &nprocs_physical_shared);
+
+		/* 
+			calculate a balanced split of the processes in the physical shared region.
+			The reminder is distributed in a round-robin fashion among the firsts new islands.
+			Example: nprocs_physical_shared = 8, heads_per_shared_region = 3.
+			rank_physical_shared:	0,1,2,3,4,5,6,7
+			color:					0,0,0,1,1,1,2,2
+		*/
+		if (instance->heads_per_shared_region > nprocs_physical_shared)
+		{
+			printf("WARNING: The requested number of heads per shared memory region (%i) exceeds "
+				"the number of available processes in the shared region (%i).\n"
+				"Setting 'Num heads per shared region' = %i.\n",
+				instance->heads_per_shared_region,
+				nprocs_physical_shared,
+				nprocs_physical_shared);
+			instance->heads_per_shared_region = nprocs_physical_shared;
+			color = rank_physical_shared;
+		}
+		else
+		{
+			int stride, reminder;
+			stride = nprocs_physical_shared / instance->heads_per_shared_region;
+			reminder = nprocs_physical_shared % instance->heads_per_shared_region;
+			if (rank_physical_shared / (stride + 1) < reminder)
+				color = rank_physical_shared / (stride + 1);
+			else
+				color = (rank_physical_shared - reminder * (stride + 1)) / stride + reminder;
+		}
+		
+		MPI_Comm_split(comm_physical_shared, color, 0, comm_shared);
+	}
 	else
-		MPI_Comm_split(MPI_COMM_WORLD, rank_world, 0, comm_shared);
+	{
+		color = rank_world;
+		MPI_Comm_split(MPI_COMM_WORLD, color, 0, comm_shared);
+	}
 
 	MPI_Comm_rank(*comm_shared, &rank_shared);
 	MPI_Comm_size(*comm_shared, &nprocs_shared);
-
-	//int stride = nprocs_shared / nheads_per_node;
-	//if (stride > 0)
-	//	color = (rank_shared % stride == 0 &&
-	//		rank_shared / stride < nheads_per_node) ? 1 : MPI_UNDEFINED;
-	//else
-	//	color = 1;
 
 	color = (rank_shared == 0) ? 1 : MPI_UNDEFINED;
 	MPI_Comm_split(MPI_COMM_WORLD, color, 0, comm_head);
@@ -216,9 +257,9 @@ void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_C
 	}
 }
 
-void compute_subdomains(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, instance_t * instance)
+void compute_subdomains(MPI_Comm comm_head, int* coords, int* nsplits_per_dim, instance_t * instance)
 {
-	if (comm_cart != MPI_COMM_NULL)
+	if (comm_head != MPI_COMM_NULL)
 	{
 		int divisor, reminder;
 		for (int i = 0, index; i < DOMAIN_DIM; i++)

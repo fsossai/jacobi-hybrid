@@ -101,7 +101,7 @@ int parse_command_line_arguments(int argc, char* argv[], instance_t* instance)
 	return 0;
 }
 
-void parse_argument(char* arg_str, argument_t *argument)
+void parse_argument(char* arg_str, argument_t* argument)
 {
 	int arg_str_length = strlen(arg_str);
 	char* token = strtok(arg_str, "=");
@@ -112,7 +112,7 @@ void parse_argument(char* arg_str, argument_t *argument)
 		return;
 	}
 
-	for (int i = 0; i<ARGUMENTS_SIZE; i++)
+	for (int i = 0; i < ARGUMENTS_SIZE; i++)
 	{
 		if (!strcmp(&token[1], arguments[i].short_name) ||
 			!strcmp(&token[2], arguments[i].full_name))
@@ -120,7 +120,7 @@ void parse_argument(char* arg_str, argument_t *argument)
 			argument->index = i;
 			if (!strcmp(arguments[i].option_name, NO_OPTION))
 				return;
-			
+
 			char* option = &arg_str[strlen(token) + 1];
 			if (arg_str_length - strlen(token) < 2 || strlen(option) == 0)
 			{
@@ -139,7 +139,7 @@ void print_help()
 {
 	printf("Solving the Helmoltz equation on a %iD grid.\n", DOMAIN_DIM);
 	printf("\nUsage: jacobi ");
-	for (int i = 0; i<ARGUMENTS_SIZE; i++)
+	for (int i = 0; i < ARGUMENTS_SIZE; i++)
 	{
 		printf("[-%s%s%s] ", arguments[i].short_name,
 			(!strcmp(arguments[i].option_name, NO_OPTION)) ? "" : "=",
@@ -158,5 +158,7 @@ void print_help()
 			(!strcmp(arguments[i].option_name, NO_OPTION)) ? "" : arguments[i].option_name,
 			arguments[i].description);
 	}
-
+	printf("\n");
+	printf("Author\t\t: Federico Sossai, federico.sossai@gmail.com\n");
+	printf("Source code\t: https://github.com/fsossai/jacobi-hybrid\n");
 }

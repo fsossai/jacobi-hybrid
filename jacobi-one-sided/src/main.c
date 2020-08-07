@@ -27,7 +27,6 @@ int main(int argc, char* argv[])
 	if (rank_world == MASTER)
 		parsing_status = parse_command_line_arguments(argc, argv, &instance);
 
-	// broadcasting errors if any and terminating is necessary
 	MPI_Bcast(&parsing_status, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
 	if (parsing_status == ERROR_PARSING_ARGUMENTS || parsing_status == HELP_MESSAGE)
 	{
@@ -45,7 +44,6 @@ int main(int argc, char* argv[])
 	// creating shared and head communicators
 	MPI_Comm comm_shared, comm_head;
 	setup_shared_and_heads(&instance, &comm_shared, &comm_head);
-
 	// to keep things simple, min{dims_i} must be >= 'nprocs'
 	broadcast_input_data_head(comm_head, &instance);
 
@@ -55,7 +53,7 @@ int main(int argc, char* argv[])
 	setup_topology(comm_head, instance.cart_splits, coords, &comm_cart);
 
 	// computing global and local subdomains' offsets and sizes
-	compute_subdomains(comm_cart, coords, instance.cart_splits, &instance);
+	compute_subdomains(comm_head, coords, instance.cart_splits, &instance);
 
 	// some input data are broadcasted inside every shared memory islands
 	broadcast_data_shared(comm_shared, &instance);
@@ -81,7 +79,7 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-void print_input_info(instance_t* instance)
+void print_input_info(instance_t * instance)
 {
 	int rank_world;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
@@ -95,12 +93,12 @@ void print_input_info(instance_t* instance)
 		printf("Alpha\t\t\t: %.5lf\n", instance->alpha);
 		printf("Relaxation\t\t: %.5lf\n", instance->relaxation);
 		printf("Tolerance\t\t: %e\n", instance->tolerance);
-		printf("Max iteration\t\t: %i\n", instance->max_iterations);
+		printf("Max iterations\t\t: %i\n", instance->max_iterations);
 		printf("---------------------------------------------------------------\n");
 	}
 }
 
-void print_debug_info(instance_t *instance, int *coords, MPI_Comm comm_shared)
+void print_debug_info(instance_t * instance, int* coords, MPI_Comm comm_shared)
 {
 	int rank_shared, rank_world, nprocs_world;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
@@ -133,18 +131,20 @@ void print_debug_info(instance_t *instance, int *coords, MPI_Comm comm_shared)
 	}
 }
 
-void print_configuration(instance_t* instance, MPI_Comm comm_head)
+void print_configuration(instance_t * instance, MPI_Comm comm_head)
 {
 	int rank_world, nprocs_world;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocs_world);
+
+	char letters[DOMAIN_DIM] = { 'X', 'Y', 'Z' };
 
 	if (rank_world == MASTER)
 	{
 		printf("Total number of processes\t\t: %i\n", nprocs_world);
 		printf("Using shared memory\t\t\t: %s\n", (instance->use_shared_memory ? "Yes" : "No"));
 		if (instance->use_shared_memory)
-			printf("Shared subdomain split direction\t: %i\n", instance->local_subdomain_split_direction);
+			printf("Shared subdomain split direction\t: %c\n", letters[instance->local_subdomain_split_direction]);
 		printf("Cartesian topology arrangement\t\t: %ix%ix%i\n",
 			instance->cart_splits[0],
 			instance->cart_splits[1],
@@ -153,7 +153,7 @@ void print_configuration(instance_t* instance, MPI_Comm comm_head)
 	}
 }
 
-void print_stats(instance_t* instance, MPI_Comm comm_head)
+void print_stats(instance_t * instance, MPI_Comm comm_head)
 {
 	int rank_world, nprocs_head;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);

@@ -6,7 +6,7 @@
 
 #define DOMAIN_DIM 3
 #define INDEX(i,j,k,N2,N3) ((i)*(N2)*(N3) + (j)*(N3) + (k))
-#define DEFAULT_SHARED_SPLIT_DIRECTION 0
+#define DEFAULT_SHARED_SPLIT_DIRECTION 1
 #define DEFAULT_USE_SHARED_MEMORY 1
 #define DEFAULT_HEADS_PER_SHARED_REGION 1
 #define STRING_FILE_NAME_MAX_SIZE 128
@@ -52,7 +52,7 @@ void print_subdomain(double* mat, instance_t* instance, char* format);
 void print_F(instance_t* instance, char* format);
 void setup_shared_and_heads(instance_t* instance, MPI_Comm* comm_shared, MPI_Comm* comm_head);
 void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_Comm* comm_cart);
-void compute_subdomains(MPI_Comm comm_cart, int* coords, int* nsplits_per_dim, instance_t* instance);
+void compute_subdomains(MPI_Comm comm_head, int* coords, int* nsplits_per_dim, instance_t* instance);
 void compute_local_workload(MPI_Comm comm_shared, instance_t* instance);
 void allocate_shared_resources(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instance);
 
