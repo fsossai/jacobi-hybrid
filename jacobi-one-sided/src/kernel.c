@@ -7,6 +7,11 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 {
 	int rank_world;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
+	if (rank_world == 0)
+	{
+		printf("Computing Jacobi ... \n");
+		fflush(stdout);
+	}
 
 	const int OFFSETS[DOMAIN_DIM] =
 	{
