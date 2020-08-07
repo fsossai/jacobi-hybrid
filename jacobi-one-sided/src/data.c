@@ -169,27 +169,27 @@ void print_F(instance_t* instance, char* format)
 	}
 }
 
-void setup_shared_and_heads(int nheads_per_node, MPI_Comm * comm_shared, MPI_Comm * comm_head)
+void setup_shared_and_heads(instance_t *instance, MPI_Comm * comm_shared, MPI_Comm * comm_head)
 {
-	int rank_shared, nprocs_shared, color;
-
-	#ifdef NO_SHARED_MEMORY
-	int rank_world;
+	int rank_world, rank_shared, nprocs_shared, color;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
-	MPI_Comm_split(MPI_COMM_WORLD, rank_world, 0, comm_shared);
-	#else
-	MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, comm_shared);
-	#endif
+
+	if (instance->use_shared_memory)
+		MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, comm_shared);
+	else
+		MPI_Comm_split(MPI_COMM_WORLD, rank_world, 0, comm_shared);
+
 	MPI_Comm_rank(*comm_shared, &rank_shared);
 	MPI_Comm_size(*comm_shared, &nprocs_shared);
 
-	int stride = nprocs_shared / nheads_per_node;
-	if (stride > 0)
-		color = (rank_shared % stride == 0 &&
-			rank_shared / stride < nheads_per_node) ? 1 : MPI_UNDEFINED;
-	else
-		color = 1;
+	//int stride = nprocs_shared / nheads_per_node;
+	//if (stride > 0)
+	//	color = (rank_shared % stride == 0 &&
+	//		rank_shared / stride < nheads_per_node) ? 1 : MPI_UNDEFINED;
+	//else
+	//	color = 1;
 
+	color = (rank_shared == 0) ? 1 : MPI_UNDEFINED;
 	MPI_Comm_split(MPI_COMM_WORLD, color, 0, comm_head);
 }
 
@@ -206,17 +206,6 @@ void setup_topology(MPI_Comm comm_head, int* nsplits_per_dim, int* coords, MPI_C
 	int periods[DOMAIN_DIM];
 	coords[0] = coords[1] = coords[2] = -1;
 	memset(periods, 0x00, DOMAIN_DIM * sizeof(int));
-	memset(nsplits_per_dim, 0x00, DOMAIN_DIM * sizeof(int));
-
-	#ifdef NO_SPLIT_X
-	nsplits_per_dim[0] = 1;
-	#endif
-	#ifdef NO_SPLIT_Y
-	nsplits_per_dim[1] = 1;
-	#endif
-	#ifdef NO_SPLIT_Z
-	nsplits_per_dim[2] = 1;
-	#endif
 
 	if (comm_head != MPI_COMM_NULL)
 	{
