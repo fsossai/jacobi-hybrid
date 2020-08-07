@@ -93,9 +93,9 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	instance->F = (double*)calloc(NX * NY * NZ , sizeof(double));
 
 	double* F = instance->F;
-	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1);
-	instance->dx[1] = 2.0 / (instance->domain_sizes[1] - 1);
-	instance->dx[2] = 2.0 / (instance->domain_sizes[2] - 1);
+	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1.0);
+	instance->dx[1] = 2.0 / (instance->domain_sizes[1] - 1.0);
+	instance->dx[2] = 2.0 / (instance->domain_sizes[2] - 1.0);
 
 	const double dx = instance->dx[0];
 	const double dy = instance->dx[1];
@@ -244,17 +244,7 @@ void compute_local_workload(MPI_Comm comm_shared, instance_t * instance)
 	MPI_Comm_rank(comm_shared, &rank_shared);
 	MPI_Comm_size(comm_shared, &nprocs_shared);
 
-	int split_direction = DEFAULT_SHARED_SPLIT_DIRECTION;
-	#ifdef LOCAL_SPLIT_X
-	split_direction = 0;
-	#endif
-	#ifdef LOCAL_SPLIT_Y
-	split_direction = 1;
-	#endif
-	#ifdef LOCAL_SPLIT_Z
-	split_direction = 2;
-	#endif
-	instance->local_subdomain_split_direction = split_direction;
+	const int split_direction = instance->local_subdomain_split_direction;
 
 	memset(instance->local_subdomain_offsets, 0x00, DOMAIN_DIM * sizeof(int));
 	memcpy(instance->local_subdomain_sizes, instance->subdomain_sizes, DOMAIN_DIM * sizeof(int));
@@ -276,9 +266,9 @@ void compute_local_workload(MPI_Comm comm_shared, instance_t * instance)
 void allocate_shared_resources(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t * instance)
 {
 	MPI_Aint shared_size = (MPI_Aint)
-		(instance->subdomain_sizes[0] + 2) *
-		(instance->subdomain_sizes[1] + 2) *
-		(instance->subdomain_sizes[2] + 2) * sizeof(double);
+		(instance->subdomain_sizes[0] + 2L) *
+		(instance->subdomain_sizes[1] + 2L) *
+		(instance->subdomain_sizes[2] + 2L) * sizeof(double);
 
 	if (comm_cart == MPI_COMM_NULL)
 		shared_size = (MPI_Aint)0;
