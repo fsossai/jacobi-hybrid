@@ -23,16 +23,16 @@ int main(int argc, char* argv[])
 	instance_t instance;
 	memset(&instance, 0x00, sizeof(instance_t));
 
-	int args_error;
+	int parsing_status;
 	if (rank_world == MASTER)
-		args_error = parse_command_line_arguments(argc, argv, &instance);
+		parsing_status = parse_command_line_arguments(argc, argv, &instance);
 
-	// broadcasting errors and terminating is necessary
-	MPI_Bcast(&args_error, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-	if (args_error == ERROR_PARSING_ARGUMENTS)
+	// broadcasting errors if any and terminating is necessary
+	MPI_Bcast(&parsing_status, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+	if (parsing_status == ERROR_PARSING_ARGUMENTS || parsing_status == HELP_MESSAGE)
 	{
 		MPI_Finalize();
-		return (rank_world == MASTER) ? ERROR_PARSING_ARGUMENTS : 0;
+		return 0;
 	}
 
 	// only master process reads problem data from the input file

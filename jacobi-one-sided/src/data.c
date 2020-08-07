@@ -8,9 +8,10 @@ void read_input(instance_t* instance)
 {
 	FILE* input = instance->input_stream;
 	if (input == NULL)
+	{
 		input = stdin;
-
-	printf("Reading instance data from standard input.\n");
+		printf("Reading instance data from standard input.\n");
+	}
 
 	for (int i = 0; i < DOMAIN_DIM; i++)
 		fscanf(input, "%i", &instance->domain_sizes[i]);
@@ -86,7 +87,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	const int NY = instance->local_subdomain_sizes[1];
 	const int NZ = instance->local_subdomain_sizes[2];
 
-	instance->F = (double*)calloc(NX * NY * NZ , sizeof(double));
+	instance->F = (double*)calloc(NX * NY * NZ, sizeof(double));
 
 	double* F = instance->F;
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1.0);
@@ -148,7 +149,7 @@ void print_subdomain(double* mat, instance_t * instance, char* format)
 	}
 }
 
-void print_F(instance_t* instance, char* format)
+void print_F(instance_t * instance, char* format)
 {
 	for (int i = 0; i < instance->local_subdomain_sizes[0]; i++)
 	{
@@ -165,7 +166,7 @@ void print_F(instance_t* instance, char* format)
 	}
 }
 
-void setup_shared_and_heads(instance_t *instance, MPI_Comm * comm_shared, MPI_Comm * comm_head)
+void setup_shared_and_heads(instance_t * instance, MPI_Comm * comm_shared, MPI_Comm * comm_head)
 {
 	int rank_world, rank_shared, nprocs_shared, color;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);

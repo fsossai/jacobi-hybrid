@@ -6,18 +6,19 @@
 static argument_t arguments[ARGUMENTS_SIZE] =
 {
 	{ 0,"no-shared-memory",			"m",	NO_OPTION,		"Choose whether to use the shared memory."	},
-	{ 1,"split-direction",			"s",	"DIRECTION",	"Direction along which split the workload"
-															"in the shared memory. Available values are"
-															" X, Y or Z. Default value is 0." },
+	{ 1,"split-direction",			"s",	"DIRECTION",	"Direction along which to split the workload "
+															"in the shared memory. Available values are "
+															"X, Y or Z. Default value is X." },
 	{ 2,"cart-no-split-direction",	"n",	"DIRECTION",	"Select along which direction the cartesian "
 															"topology should be flattened. Available "
 															"values are X, Y or Z." },
-	{ 3,"heads-per-shared-region",	"h",	"NUM",			"Set how many 'head' processes will be "
+	{ 3,"heads-per-shared-region",	"H",	"NUM",			"Set how many 'head' processes will be "
 															"instantiated per each physical shared "
 															"region of memory. Default value is 1." },
-	{ 4,"input-instance",			"i",	"FILENAME",		"Input file with domain sizes and parameters\n"
+	{ 4,"input-instance",			"i",	"FILENAME",		"Input file with domain sizes and parameters "
 															"one per line: size x, size y, size z, alpha, "
-															"relaxation, tolerance, max iterations." }
+															"relaxation, tolerance, max iterations." },
+	{ 5,"help",						"h",	NO_OPTION,		"Show this help message." }
 };
 
 int parse_command_line_arguments(int argc, char* argv[], instance_t* instance)
@@ -83,8 +84,13 @@ int parse_command_line_arguments(int argc, char* argv[], instance_t* instance)
 				return ERROR_PARSING_ARGUMENTS;
 			}
 			break;
+		case 5:
+			print_help();
+			return HELP_MESSAGE;
 		case ERROR_UNKNOWN_ARGUMENT:
 			fprintf(stderr, "ERROR: Unknown argument '%s'\n", argument.full_name);
+			print_help();
+			return ERROR_UNKNOWN_ARGUMENT;
 		case ERROR_INVALID_OPTION:
 			fprintf(stderr, "ERROR: Invalid or missing option for argument '%s'\n", argument.full_name);
 			return ERROR_PARSING_ARGUMENTS;
@@ -131,5 +137,26 @@ void parse_argument(char* arg_str, argument_t *argument)
 
 void print_help()
 {
+	printf("Solving the Helmoltz equation on a %iD grid.\n", DOMAIN_DIM);
+	printf("\nUsage: jacobi ");
+	for (int i = 0; i<ARGUMENTS_SIZE; i++)
+	{
+		printf("[-%s%s%s] ", arguments[i].short_name,
+			(!strcmp(arguments[i].option_name, NO_OPTION)) ? "" : "=",
+			(!strcmp(arguments[i].option_name, NO_OPTION)) ? "" : arguments[i].option_name);
+	}
+
+	printf("\n\nIf no input file is specified, the instance data will be requested in the standard input (stdin).\n");
+	printf("List of options:\n");
+
+	for (int i = 0; i < ARGUMENTS_SIZE; i++)
+	{
+		printf("\n -%s, --%s%s%s\n\t%s\n",
+			arguments[i].short_name,
+			arguments[i].full_name,
+			(!strcmp(arguments[i].option_name, NO_OPTION)) ? "" : "=",
+			(!strcmp(arguments[i].option_name, NO_OPTION)) ? "" : arguments[i].option_name,
+			arguments[i].description);
+	}
 
 }
