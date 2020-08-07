@@ -8,6 +8,8 @@
 #define INDEX(i,j,k,N2,N3) ((i)*(N2)*(N3) + (j)*(N3) + (k))
 #define DEFAULT_SHARED_SPLIT_DIRECTION 0
 #define DEFAULT_USE_SHARED_MEMORY 1
+#define DEFAULT_HEADS_PER_SHARED_REGION 1
+#define STRING_FILE_NAME_MAX_SIZE 128
 
 typedef struct
 {
@@ -19,7 +21,10 @@ typedef struct
 	int local_subdomain_sizes[DOMAIN_DIM];
 	int cart_splits[DOMAIN_DIM];
 	int use_shared_memory;
+	int heads_per_shared_region;
 
+	char input_file_name[STRING_FILE_NAME_MAX_SIZE];
+	FILE* input_stream;
 	double alpha;
 	double residual;
 	double relaxation;
@@ -38,7 +43,7 @@ typedef struct
 
 } instance_t;
 
-void read_input(FILE* stream, instance_t* instance);
+void read_input(FILE* input, instance_t* instance);
 void broadcast_input_data_head(MPI_Comm comm_head, instance_t* instance);
 void broadcast_data_shared(MPI_Comm comm_shared, instance_t* instance);
 void initialize_problem(MPI_Comm comm_cart, instance_t* instance);

@@ -4,24 +4,14 @@
 #include <string.h>
 #include "data.h"
 
-void read_input(FILE* stream, instance_t* instance)
+void read_input(FILE* input, instance_t* instance)
 {
 	for (int i = 0; i < DOMAIN_DIM; i++)
-		fscanf(stream, "%i", &instance->domain_sizes[i]);
-	fscanf(stream, "%lf", &instance->alpha);
-	fscanf(stream, "%lf", &instance->relaxation);
-	fscanf(stream, "%lf", &instance->tolerance);
-	fscanf(stream, "%i", &instance->max_iterations);
-
-	#ifdef _DEBUG
-	printf("dims\t\t: (%i,%i,%i)\n",
-		instance->domain_sizes[0], instance->domain_sizes[1], instance->domain_sizes[2]);
-	printf("alpha\t\t: %lf\n", instance->alpha);
-	printf("relaxation\t: %lf\n", instance->relaxation);
-	printf("tolerance\t: %lf\n", instance->tolerance);
-	printf("iterations\t: %i\n", instance->max_iterations);
-	#endif // _DEBUG
-
+		fscanf(input, "%i", &instance->domain_sizes[i]);
+	fscanf(input, "%lf", &instance->alpha);
+	fscanf(input, "%lf", &instance->relaxation);
+	fscanf(input, "%lf", &instance->tolerance);
+	fscanf(input, "%i", &instance->max_iterations);
 }
 
 void broadcast_input_data_head(MPI_Comm comm_head, instance_t * instance)

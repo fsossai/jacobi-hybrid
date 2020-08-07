@@ -5,6 +5,7 @@
 #include "data.h"
 #include "kernel.h"
 #include "arguments.h"
+#define MASTER 0
 
 void print_input_info(instance_t* instance);
 void print_debug_info(instance_t* instance, int* coords, MPI_Comm comm_shared);
@@ -14,29 +15,26 @@ void print_stats(instance_t* instance, MPI_Comm comm_head);
 int main(int argc, char* argv[])
 {
 	int rank_world, nprocs_world;
-
-	instance_t instance;
-	memset(&instance, 0x00, sizeof(instance_t));
-
-	if (parse_command_line_arguments(argc, argv, &instance) == ERROR_PARSING_ARGUMENTS)
-		return -1;
-
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocs_world);
 
-	/*if (rank_world == 0)
-		read_input(stdin, &instance);*/
-	if (rank_world == 0) // debug
+	instance_t instance;
+	memset(&instance, 0x00, sizeof(instance_t));
+
+	int args_error = 0;
+	if (rank_world == MASTER)
+		args_error = parse_command_line_arguments(argc, argv, &instance);
+
+	MPI_Bcast(&args_error, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+	if (args_error == ERROR_PARSING_ARGUMENTS)
 	{
-		instance.domain_sizes[0] = 300;
-		instance.domain_sizes[1] = 300;
-		instance.domain_sizes[2] = 300;
-		instance.alpha = 0.8;
-		instance.relaxation = 1.0;
-		instance.tolerance = 1e-10;
-		instance.max_iterations = 50;
+		MPI_Finalize();
+		return (rank_world == MASTER) ? ERROR_PARSING_ARGUMENTS : 0;
 	}
+
+	if (rank_world == MASTER)
+		read_input(instance.input_stream, &instance);
 
 	// printing input data
 	print_input_info(&instance);
@@ -67,7 +65,7 @@ int main(int argc, char* argv[])
 	allocate_shared_resources(comm_cart, comm_shared, &instance);
 	print_configuration(&instance, comm_head);
 
-	#ifdef _DEBUG
+	#ifdef DEBUG
 	print_debug_info(&instance, coords, comm_shared);
 	#endif
 
@@ -85,7 +83,7 @@ void print_input_info(instance_t* instance)
 	int rank_world;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
 
-	if (rank_world == 0)
+	if (rank_world == MASTER)
 	{
 		printf("Domain size\t\t: %ix%ix%i\n",
 			instance->domain_sizes[0],
@@ -134,11 +132,13 @@ void print_debug_info(instance_t *instance, int *coords, MPI_Comm comm_shared)
 
 void print_configuration(instance_t* instance, MPI_Comm comm_head)
 {
-	int rank_world;
+	int rank_world, nprocs_world;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
+	MPI_Comm_size(MPI_COMM_WORLD, &nprocs_world);
 
-	if (rank_world == 0)
+	if (rank_world == MASTER)
 	{
+		printf("Total number of processes\t\t: %i\n", nprocs_world);
 		printf("Using shared memory\t\t\t: %s\n", (instance->use_shared_memory ? "Yes" : "No"));
 		if (instance->use_shared_memory)
 			printf("Shared subdomain split direction\t: %i\n", instance->local_subdomain_split_direction);
@@ -146,6 +146,7 @@ void print_configuration(instance_t* instance, MPI_Comm comm_head)
 			instance->cart_splits[0],
 			instance->cart_splits[1],
 			instance->cart_splits[2]);
+		printf("Num heads per physical shared region\t: %i\n", instance->heads_per_shared_region);
 	}
 }
 
@@ -161,12 +162,11 @@ void print_stats(instance_t* instance, MPI_Comm comm_head)
 		MPI_Reduce(&instance->total_computation_time, &iteration_time_avg, 1, MPI_DOUBLE, MPI_SUM, 0, comm_head);
 		iteration_time_avg /= (double)nprocs_head * (double)instance->performed_iterations;
 
-		if (rank_world == 0)
+		if (rank_world == MASTER)
 		{
 			printf("---------------------------------------------------------------\n");
 			printf("Performed iterations\t\t\t: %i\n", instance->performed_iterations);
 			printf("Residual\t\t\t\t: %e\n", instance->residual);
-			printf("Performed iterations\t\t\t: %i\n", instance->performed_iterations);
 			printf("Total elapsed time\t\t\t: %.3lf s\n", instance->total_computation_time);
 			printf("Average time per iteration\t\t: %.3lf ms\n", iteration_time_avg * 1e3);
 			printf("Performance\t\t\t\t: %.3lf MFlops\n",
