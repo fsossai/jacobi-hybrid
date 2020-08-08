@@ -86,7 +86,7 @@ void print_input_info(instance_t * instance)
 
 	if (rank_world == MASTER)
 	{
-		printf("Domain size\t\t: %ix%ix%i\n",
+		printf("Domain size\t\t: %ix%i\n",
 			instance->domain_sizes[0],
 			instance->domain_sizes[1]);
 		printf("Alpha\t\t\t: %.5lf\n", instance->alpha);
@@ -140,7 +140,7 @@ void print_configuration(instance_t * instance, MPI_Comm comm_head)
 		printf("Using shared memory\t\t\t: %s\n", (instance->use_shared_memory ? "Yes" : "No"));
 		if (instance->use_shared_memory)
 			printf("Shared subdomain split direction\t: %c\n", letters[instance->local_subdomain_split_direction]);
-		printf("Cartesian topology arrangement\t\t: %ix%ix%i\n",
+		printf("Cartesian topology arrangement\t\t: %ix%i\n",
 			instance->cart_splits[0],
 			instance->cart_splits[1]);
 		printf("Num heads per physical shared region\t: %i\n", instance->heads_per_shared_region);
