@@ -88,8 +88,7 @@ void print_input_info(instance_t * instance)
 	{
 		printf("Domain size\t\t: %ix%ix%i\n",
 			instance->domain_sizes[0],
-			instance->domain_sizes[1],
-			instance->domain_sizes[2]);
+			instance->domain_sizes[1]);
 		printf("Alpha\t\t\t: %.5lf\n", instance->alpha);
 		printf("Relaxation\t\t: %.5lf\n", instance->relaxation);
 		printf("Tolerance\t\t: %e\n", instance->tolerance);
@@ -112,19 +111,15 @@ void print_debug_info(instance_t * instance, int* coords, MPI_Comm comm_shared)
 			printf("w%2i s%2i c(%2i,%2i,%2i) ",
 				rank_world, rank_shared,
 				coords[0], coords[1], coords[2]);
-			printf("sdsizes (%5i,%5i,%5i), offs (%5i+%4i,%5i+%4i,%5i+%4i) lsdsizes (%4i,%4i,%4i)\n",
+			printf("sdsizes (%5i,%5i), offs (%5i+%4i,%5i+%4i) lsdsizes (%4i,%4i)\n",
 				instance->subdomain_sizes[0],
 				instance->subdomain_sizes[1],
-				instance->subdomain_sizes[2],
 				instance->subdomain_offsets[0],
 				instance->local_subdomain_offsets[0],
 				instance->subdomain_offsets[1],
 				instance->local_subdomain_offsets[1],
-				instance->subdomain_offsets[2],
-				instance->local_subdomain_offsets[2],
 				instance->local_subdomain_sizes[0],
-				instance->local_subdomain_sizes[1],
-				instance->local_subdomain_sizes[2]);
+				instance->local_subdomain_sizes[1]);
 			fflush(stdout);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -137,7 +132,7 @@ void print_configuration(instance_t * instance, MPI_Comm comm_head)
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocs_world);
 
-	char letters[DOMAIN_DIM] = { 'X', 'Y', 'Z' };
+	char letters[DOMAIN_DIM] = { 'X', 'Y' };
 
 	if (rank_world == MASTER)
 	{
@@ -147,8 +142,7 @@ void print_configuration(instance_t * instance, MPI_Comm comm_head)
 			printf("Shared subdomain split direction\t: %c\n", letters[instance->local_subdomain_split_direction]);
 		printf("Cartesian topology arrangement\t\t: %ix%ix%i\n",
 			instance->cart_splits[0],
-			instance->cart_splits[1],
-			instance->cart_splits[2]);
+			instance->cart_splits[1]);
 		printf("Num heads per physical shared region\t: %i\n", instance->heads_per_shared_region);
 	}
 }

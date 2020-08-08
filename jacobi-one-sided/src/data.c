@@ -91,7 +91,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	const int NX = instance->local_subdomain_sizes[0];
 	const int NY = instance->local_subdomain_sizes[1];
 
-	instance->F = (double*)calloc(NX * NY * NZ, sizeof(double));
+	instance->F = (double*)calloc(NX * NY, sizeof(double));
 
 	double* F = instance->F;
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1.0);
@@ -112,7 +112,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 			F[INDEX(i, j, NY)] =
 				m_alpha * (1.0 - xval * xval) * (1.0 - yval * yval)
 				- 2.0 * (1.0 - yval * yval)
-				- 2.0 * (1.0 - xval * xval)
+				- 2.0 * (1.0 - xval * xval);
 		}
 	}
 }

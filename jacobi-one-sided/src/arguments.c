@@ -8,15 +8,15 @@ static argument_t arguments[ARGUMENTS_SIZE] =
 	{ 0,"no-shared-memory",			"m",	NO_OPTION,		"Choose whether to use the shared memory."	},
 	{ 1,"split-direction",			"s",	"DIRECTION",	"Direction along which to split the workload "
 															"in the shared memory. Available values are "
-															"X, Y or Z. Default value is X." },
+															"X, or Y. Default value is X." },
 	{ 2,"cart-no-split-direction",	"n",	"DIRECTION",	"Select along which direction the cartesian "
 															"topology should be flattened. Available "
-															"values are X, Y or Z." },
+															"values are X, or Y." },
 	{ 3,"heads-per-shared-region",	"H",	"NUM",			"Set how many 'head' processes will be "
 															"instantiated per each physical shared "
 															"region of memory. Default value is 1." },
 	{ 4,"input-instance",			"i",	"FILENAME",		"Input file with domain sizes and parameters "
-															"one per line: size x, size y, size z, alpha, "
+															"one per line: size x, size y, alpha, "
 															"relaxation, tolerance, max iterations." },
 	{ 5,"help",						"h",	NO_OPTION,		"Show this help message." }
 };
@@ -44,8 +44,6 @@ int parse_command_line_arguments(int argc, char* argv[], instance_t* instance)
 				instance->local_subdomain_split_direction = 0;
 			else if (!strcmp(argument.option_value, "Y") || !strcmp(argument.option_value, "y"))
 				instance->local_subdomain_split_direction = 1;
-			else if (!strcmp(argument.option_value, "Z") || !strcmp(argument.option_value, "z"))
-				instance->local_subdomain_split_direction = 2;
 			else
 			{
 				fprintf(stderr, "ERROR: Invalid or missing option for argument '%s'\n", argument.full_name);
@@ -57,8 +55,6 @@ int parse_command_line_arguments(int argc, char* argv[], instance_t* instance)
 				instance->cart_splits[0] = 1;
 			else if (!strcmp(argument.option_value, "Y") || !strcmp(argument.option_value, "y"))
 				instance->cart_splits[1] = 1;
-			else if (!strcmp(argument.option_value, "Z") || !strcmp(argument.option_value, "z"))
-				instance->cart_splits[2] = 1;
 			else
 			{
 				fprintf(stderr, "ERROR: Invalid or missing option for argument '%s'\n", argument.full_name);
