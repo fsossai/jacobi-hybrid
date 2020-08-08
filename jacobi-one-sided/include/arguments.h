@@ -23,7 +23,7 @@ typedef struct
 } argument_t;
 
 int parse_command_line_arguments(int argc, char* argv[], instance_t* instance);
-void parse_argument(char* arg);
+void parse_argument(char* arg_str, argument_t* argument);
 void print_help();
 
 #endif // !ARGUMENTS_H
