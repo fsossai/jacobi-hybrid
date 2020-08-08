@@ -19,6 +19,7 @@ void read_input(instance_t* instance)
 	fscanf(input, "%lf", &instance->relaxation);
 	fscanf(input, "%lf", &instance->tolerance);
 	fscanf(input, "%i", &instance->max_iterations);
+	fclose(input);
 }
 
 void broadcast_input_data_head(MPI_Comm comm_head, instance_t * instance)
