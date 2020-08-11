@@ -99,7 +99,7 @@ int parse_command_line_arguments(int argc, char* argv[], instance_t* instance)
 
 void parse_argument(char* arg_str, argument_t* argument)
 {
-	int arg_str_length = strlen(arg_str);
+	size_t arg_str_length = strlen(arg_str);
 	char* token = strtok(arg_str, "=");
 	strcpy(argument->full_name, token);
 	if (token == NULL || strlen(token) < 2)
