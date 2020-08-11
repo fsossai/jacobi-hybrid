@@ -108,9 +108,9 @@ void print_debug_info(instance_t * instance, int* coords, MPI_Comm comm_shared)
 	{
 		if (rank_world == p)
 		{
-			printf("w%2i s%2i c(%2i,%2i,%2i) ",
+			printf("w%2i s%2i c(%2i,%2i) ",
 				rank_world, rank_shared,
-				coords[0], coords[1], coords[2]);
+				coords[0], coords[1]);
 			printf("sdsizes (%5i,%5i), offs (%5i+%4i,%5i+%4i) lsdsizes (%4i,%4i)\n",
 				instance->subdomain_sizes[0],
 				instance->subdomain_sizes[1],
