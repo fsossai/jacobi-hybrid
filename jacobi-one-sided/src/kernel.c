@@ -141,7 +141,7 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 			}
 		}
 		// getting total residual inside a shared memory island
-		double shared_residual;
+		double shared_residual = 0;
 		MPI_Reduce(&residual, &shared_residual, 1, MPI_DOUBLE, MPI_SUM, 0, comm_shared);
 
 		// getting total residual of the whole iteration
@@ -150,9 +150,9 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 			MPI_Allreduce(&shared_residual, &total_residual, 1, MPI_DOUBLE, MPI_SUM, comm_cart);
 
 		total_residual = sqrt(total_residual) / (
-			instance->domain_sizes[0] *
-			instance->domain_sizes[1] *
-			instance->domain_sizes[2]);
+			(double)instance->domain_sizes[0] *
+			(double)instance->domain_sizes[1] *
+			(double)instance->domain_sizes[2]);
 
 		// swapping pointers
 		double* temp = U;

@@ -94,7 +94,12 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	const int NY = instance->local_subdomain_sizes[1];
 	const int NZ = instance->local_subdomain_sizes[2];
 
-	instance->F = (double*)calloc(NX * NY * NZ, sizeof(double));
+	instance->F = (double*)calloc((size_t)NX * (size_t)NY * (size_t)NZ, sizeof(double));
+	if (instance->F == NULL)
+	{
+		fprintf(stderr, "ERORR: memory allocation for F matrix failed! (Returned NULL)\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+	}
 
 	double* F = instance->F;
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1.0);
@@ -305,9 +310,9 @@ void compute_local_workload(MPI_Comm comm_shared, instance_t * instance)
 void allocate_shared_resources(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t * instance)
 {
 	MPI_Aint shared_size = (MPI_Aint)
-		(instance->subdomain_sizes[0] + 2L) *
-		(instance->subdomain_sizes[1] + 2L) *
-		(instance->subdomain_sizes[2] + 2L) * sizeof(double);
+		((uint64_t)instance->subdomain_sizes[0] + 2LL) *
+		((uint64_t)instance->subdomain_sizes[1] + 2LL) *
+		((uint64_t)instance->subdomain_sizes[2] + 2LL) * sizeof(double);
 
 	if (comm_cart == MPI_COMM_NULL)
 		shared_size = (MPI_Aint)0;

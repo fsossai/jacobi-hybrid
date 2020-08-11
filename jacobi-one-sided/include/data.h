@@ -2,6 +2,7 @@
 #define DATA_H
 
 #include <stdio.h>
+#include <stdint.h>
 #include <mpi.h>
 
 #define DOMAIN_DIM 3
