@@ -101,7 +101,11 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 	double timer = -MPI_Wtime();
 	for (int iteration = 1; iteration <= instance->max_iterations; iteration++)
 	{
-		// halo exchange
+		// Synchronizing read/write operations on the shared memory
+		MPI_Win_fence(0, instance->win_U);
+		MPI_Win_fence(0, instance->win_Unew);
+
+		// Halo communication
 		if (comm_cart != MPI_COMM_NULL)
 		{
 			int nreq = 0;
@@ -120,10 +124,15 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 			}
 			MPI_Waitall(nreq, requests, MPI_STATUSES_IGNORE);
 		}
+		// Synchronizing read/write operations on the shared memory.
+		MPI_Win_fence(0, instance->win_U);
+		MPI_Win_fence(0, instance->win_Unew);
+
+		// Computation can continue only if all halo communication has come to the end.
 		MPI_Barrier(comm_shared);
 
 		/*
-		the kernel computation is splitted in two almost equal parts:
+		Kernel computation is splitted in two almost equal parts:
 		only every 'RESIDUAL_CHECK' iterations the residual is actually computed
 		inside the kernel.
 		*/
