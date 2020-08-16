@@ -62,8 +62,9 @@ int main(int argc, char* argv[])
 	compute_local_workload(comm_shared, &instance);
 
 	// matrices are allocated and F is initialized
-	initialize_problem(comm_cart, &instance);
 	allocate_shared_resources(comm_cart, comm_shared, &instance);
+	initialize_problem(comm_cart, &instance);
+	set_initial_conditions(comm_cart, &instance);
 	print_configuration(&instance, comm_head);
 
 	#ifdef DEBUG
@@ -72,7 +73,7 @@ int main(int argc, char* argv[])
 
 	compute_jacobi(comm_cart, comm_shared, &instance);
 
-	print_stats(&instance, comm_head);
+	print_stats(&instance, comm_head);	
 
 	close_problem(&instance);
 	MPI_Finalize();

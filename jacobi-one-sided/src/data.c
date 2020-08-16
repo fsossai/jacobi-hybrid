@@ -102,6 +102,7 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 	}
 
 	double* F = instance->F;
+	double* U = instance->U;
 	instance->dx[0] = 2.0 / (instance->domain_sizes[0] - 1.0);
 	instance->dx[1] = 2.0 / (instance->domain_sizes[1] - 1.0);
 	instance->dx[2] = 2.0 / (instance->domain_sizes[2] - 1.0);
@@ -130,6 +131,18 @@ void initialize_problem(MPI_Comm comm_cart, instance_t * instance)
 			}
 		}
 	}
+}
+
+void set_initial_conditions(MPI_Comm comm_cart, instance_t* instance)
+{
+	if (comm_cart == MPI_COMM_NULL)
+		return;
+
+	size_t size = 1LL;
+	for (int i = 0; i < DOMAIN_DIM; i++)
+		size *= (size_t)instance->subdomain_sizes[i] + 2LL;
+
+	memset(instance->U, 0x00, size);
 }
 
 void close_problem(instance_t * instance)
@@ -327,3 +340,4 @@ void allocate_shared_resources(MPI_Comm comm_cart, MPI_Comm comm_shared, instanc
 	MPI_Win_shared_query(instance->win_U, head, &actual_size, &disp_unit, &instance->U);
 	MPI_Win_shared_query(instance->win_Unew, head, &actual_size, &disp_unit, &instance->Unew);
 }
+
