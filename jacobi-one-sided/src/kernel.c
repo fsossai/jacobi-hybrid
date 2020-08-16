@@ -128,9 +128,6 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 		MPI_Win_fence(0, instance->win_U);
 		MPI_Win_fence(0, instance->win_Unew);
 
-		// Computation can continue only if all halo communication has come to the end.
-		MPI_Barrier(comm_shared);
-
 		/*
 		Kernel computation is splitted in two almost equal parts:
 		only every 'RESIDUAL_CHECK' iterations the residual is actually computed
