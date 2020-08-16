@@ -48,6 +48,7 @@ void read_input(instance_t* instance);
 void broadcast_input_data_head(MPI_Comm comm_head, instance_t* instance);
 void broadcast_data_shared(MPI_Comm comm_shared, instance_t* instance);
 void initialize_problem(MPI_Comm comm_cart, instance_t* instance);
+void set_initial_conditions(MPI_Comm comm_cart, instance_t* instance);
 void close_problem(instance_t* instance);
 void print_subdomain(double* mat, instance_t* instance, char* format);
 void print_F(instance_t* instance, char* format);
