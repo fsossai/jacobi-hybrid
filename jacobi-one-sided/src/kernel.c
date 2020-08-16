@@ -30,6 +30,14 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 	const double bb = -2.0 * (ax + ay) - instance->alpha;
 	const double relax = instance->relaxation;
 
+	/*
+	Creating 4 MPI datatypes for each cartesian direction.
+	Every proccess has to receive data from the 'low' neighbor (low_data) and put
+	it into the halo region (low_halo), and the same thing happens for the high neighbors.
+	In 2D for example, 'low' and 'high' represents 'left' and 'right' in a direction, but
+	also 'north' and 'south' in the other direction.
+	'Facet' is a fancy name that should recall an n-dimensional border.
+	*/
 	MPI_Datatype facets_low_data[DOMAIN_DIM];
 	MPI_Datatype facets_low_halo[DOMAIN_DIM];
 	MPI_Datatype facets_high_data[DOMAIN_DIM];
@@ -68,6 +76,7 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 		starts_low_halo[i] = starts_high_data[i] = starts_high_halo[i] = 1;
 	}
 
+	// let's get to know our cartesian neighbors in every direction
 	int rank_source[DOMAIN_DIM], rank_dest[DOMAIN_DIM];
 	if (comm_cart != MPI_COMM_NULL)
 	{
@@ -77,7 +86,7 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 
 	const int split_dir = instance->local_subdomain_split_direction;
 	const int N[DOMAIN_DIM] =
-	{ 
+	{
 		instance->local_subdomain_sizes[0],
 		instance->local_subdomain_sizes[1],
 	};
@@ -86,7 +95,7 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 	MPI_Request requests[DOMAIN_DIM * 4];
 	instance->performed_iterations = 0;
 	double timer = -MPI_Wtime();
-	for (int iteration = 0; iteration < instance->max_iterations; iteration++)
+	for (int iteration = 1; iteration <= instance->max_iterations; iteration++)
 	{
 		// halo exchange
 		if (comm_cart != MPI_COMM_NULL)
@@ -109,52 +118,80 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 		}
 		MPI_Barrier(comm_shared);
 
-		// computation
-		residual = 0.0;
-		
-		for (int i = 0, U_i = OFFSETS[0]; i < N[0]; i++, U_i++)
+		/*
+		the kernel computation is splitted in two almost equal parts:
+		only every 'RESIDUAL_CHECK' iterations the residual is actually computed
+		inside the kernel.
+		*/
+		if (iteration % RESIDUAL_CHECK == 0 || iteration == instance->max_iterations)
 		{
-			for (int j = 0, U_j = OFFSETS[1]; j < N[1]; j++, U_j++)
+			residual = 0.0;
+			for (int i = 0, U_i = OFFSETS[0]; i < N[0]; i++, U_i++)
 			{
-				partial = (
-					ax * (U[INDEX(U_i - 1, U_j, U_NY)] +
-						U[INDEX(U_i + 1, U_j, U_NY)]) +
-					ay * (U[INDEX(U_i, U_j - 1, U_NY)] +
-						U[INDEX(U_i, U_j + 1, U_NY)]) +
-					bb * U[INDEX(U_i, U_j, U_NY)] -
-					F[INDEX(i, j, N[1])]
-					) / bb;
+				for (int j = 0, U_j = OFFSETS[1]; j < N[1]; j++, U_j++)
+				{
+					partial = (
+						ax * (U[INDEX(U_i - 1, U_j, U_NY)] +
+							U[INDEX(U_i + 1, U_j, U_NY)]) +
+						ay * (U[INDEX(U_i, U_j - 1, U_NY)] +
+							U[INDEX(U_i, U_j + 1, U_NY)]) +
+						bb * U[INDEX(U_i, U_j, U_NY)] -
+						F[INDEX(i, j, N[1])]
+						) / bb;
 
-				Unew[INDEX(U_i, U_j, U_NY)] =
-					U[INDEX(U_i, U_j, U_NY)] - relax * partial;
+					Unew[INDEX(U_i, U_j, U_NY)] =
+						U[INDEX(U_i, U_j, U_NY)] - relax * partial;
 
-				residual += partial * partial;
+					residual += partial * partial;
+				}
+			}
+			// getting total residual inside a shared memory island
+			double shared_residual = 0;
+			MPI_Reduce(&residual, &shared_residual, 1, MPI_DOUBLE, MPI_SUM, 0, comm_shared);
+
+			// getting total residual of the whole iteration
+			double total_residual;
+			if (comm_cart != MPI_COMM_NULL)
+				MPI_Allreduce(&shared_residual, &total_residual, 1, MPI_DOUBLE, MPI_SUM, comm_cart);
+
+			total_residual = sqrt(total_residual) / (
+				(double)instance->domain_sizes[0] *
+				(double)instance->domain_sizes[1]);
+
+			instance->residual = total_residual;
+		}
+		else // no need to compute the residual
+		{
+			for (int i = 0, U_i = OFFSETS[0]; i < N[0]; i++, U_i++)
+			{
+				for (int j = 0, U_j = OFFSETS[1]; j < N[1]; j++, U_j++)
+				{
+					partial = (
+						ax * (U[INDEX(U_i - 1, U_j, U_NY)] +
+							U[INDEX(U_i + 1, U_j, U_NY)]) +
+						ay * (U[INDEX(U_i, U_j - 1, U_NY)] +
+							U[INDEX(U_i, U_j + 1, U_NY)]) +
+						bb * U[INDEX(U_i, U_j, U_NY)] -
+						F[INDEX(i, j, N[1])]
+						) / bb;
+
+					Unew[INDEX(U_i, U_j, U_NY)] =
+						U[INDEX(U_i, U_j, U_NY)] - relax * partial;
+				}
 			}
 		}
-		// getting total residual inside a shared memory island
-		double shared_residual = 0;
-		MPI_Reduce(&residual, &shared_residual, 1, MPI_DOUBLE, MPI_SUM, 0, comm_shared);
-
-		// getting total residual of the whole iteration
-		double total_residual;
-		if (comm_cart != MPI_COMM_NULL)
-			MPI_Allreduce(&shared_residual, &total_residual, 1, MPI_DOUBLE, MPI_SUM, comm_cart);
-
-		total_residual = sqrt(total_residual) / (
-			(double)instance->domain_sizes[0] *
-			(double)instance->domain_sizes[1]);
 
 		// swapping pointers
 		double* temp = U;
 		instance->U = U = Unew;
 		Unew = temp;
 
-		instance->residual = total_residual;
 		instance->performed_iterations++;
 	}
 	timer += MPI_Wtime();
 	instance->total_computation_time = timer;
 
+	// freeing all datatypes that won't be used anymore
 	for (int i = 0; i < DOMAIN_DIM; i++)
 	{
 		MPI_Type_free(&facets_low_data[i]);
