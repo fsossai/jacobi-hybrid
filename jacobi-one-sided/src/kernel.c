@@ -127,40 +127,38 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 		// Synchronizing read/write operations on the shared memory.
 		MPI_Win_fence(0, instance->win_U);
 		MPI_Win_fence(0, instance->win_Unew);
-
-		/*
-		Kernel computation is splitted in two almost equal parts:
-		only every 'RESIDUAL_CHECK' iterations the residual is actually computed
-		inside the kernel.
-		*/
-		if (iteration % RESIDUAL_CHECK == 0 || iteration == instance->max_iterations)
+	
+		// Kernel computation: Jacobi stencil
+		residual = 0.0;
+		for (int i = 0, U_i = OFFSETS[0]; i < N[0]; i++, U_i++)
 		{
-			residual = 0.0;
-			for (int i = 0, U_i = OFFSETS[0]; i < N[0]; i++, U_i++)
+			for (int j = 0, U_j = OFFSETS[1]; j < N[1]; j++, U_j++)
 			{
-				for (int j = 0, U_j = OFFSETS[1]; j < N[1]; j++, U_j++)
+				for (int k = 0, U_k = OFFSETS[2]; k < N[2]; k++, U_k++)
 				{
-					for (int k = 0, U_k = OFFSETS[2]; k < N[2]; k++, U_k++)
-					{
-						partial = (
-							ax * (U[INDEX(U_i - 1, U_j, U_k, U_NY, U_NZ)] +
-								U[INDEX(U_i + 1, U_j, U_k, U_NY, U_NZ)]) +
-							ay * (U[INDEX(U_i, U_j - 1, U_k, U_NY, U_NZ)] +
-								U[INDEX(U_i, U_j + 1, U_k, U_NY, U_NZ)]) +
-							az * (U[INDEX(U_i, U_j, U_k - 1, U_NY, U_NZ)] +
-								U[INDEX(U_i, U_j, U_k + 1, U_NY, U_NZ)]) +
-							bb * U[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] -
-							F[INDEX(i, j, k, N[1], N[2])]
-							) / bb;
+					partial = (
+						ax * (U[INDEX(U_i - 1, U_j, U_k, U_NY, U_NZ)] +
+							U[INDEX(U_i + 1, U_j, U_k, U_NY, U_NZ)]) +
+						ay * (U[INDEX(U_i, U_j - 1, U_k, U_NY, U_NZ)] +
+							U[INDEX(U_i, U_j + 1, U_k, U_NY, U_NZ)]) +
+						az * (U[INDEX(U_i, U_j, U_k - 1, U_NY, U_NZ)] +
+							U[INDEX(U_i, U_j, U_k + 1, U_NY, U_NZ)]) +
+						bb * U[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] -
+						F[INDEX(i, j, k, N[1], N[2])]
+						) / bb;
 
-						Unew[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] =
-							U[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] - relax * partial;
+					Unew[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] =
+						U[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] - relax * partial;
 
-						residual += partial * partial;
-					}
+					residual += partial * partial;
 				}
 			}
+		}
 
+		/*	The residual is is actually computed across processes
+			only every 'RESIDUAL_CHECK' iterations. */
+		if (iteration % RESIDUAL_CHECK == 0 || iteration == instance->max_iterations)
+		{
 			// getting total residual inside a shared memory island
 			double shared_residual = 0;
 			MPI_Reduce(&residual, &shared_residual, 1, MPI_DOUBLE, MPI_SUM, 0, comm_shared);
@@ -176,31 +174,6 @@ void compute_jacobi(MPI_Comm comm_cart, MPI_Comm comm_shared, instance_t* instan
 				(double)instance->domain_sizes[2]);
 
 			instance->residual = total_residual;
-		}
-		else // no need to compute the residual
-		{
-			for (int i = 0, U_i = OFFSETS[0]; i < N[0]; i++, U_i++)
-			{
-				for (int j = 0, U_j = OFFSETS[1]; j < N[1]; j++, U_j++)
-				{
-					for (int k = 0, U_k = OFFSETS[2]; k < N[2]; k++, U_k++)
-					{
-						partial = (
-							ax * (U[INDEX(U_i - 1, U_j, U_k, U_NY, U_NZ)] +
-								U[INDEX(U_i + 1, U_j, U_k, U_NY, U_NZ)]) +
-							ay * (U[INDEX(U_i, U_j - 1, U_k, U_NY, U_NZ)] +
-								U[INDEX(U_i, U_j + 1, U_k, U_NY, U_NZ)]) +
-							az * (U[INDEX(U_i, U_j, U_k - 1, U_NY, U_NZ)] +
-								U[INDEX(U_i, U_j, U_k + 1, U_NY, U_NZ)]) +
-							bb * U[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] -
-							F[INDEX(i, j, k, N[1], N[2])]
-							) / bb;
-
-						Unew[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] =
-							U[INDEX(U_i, U_j, U_k, U_NY, U_NZ)] - relax * partial;
-					}
-				}
-			}
 		}
 
 		// swapping pointers
