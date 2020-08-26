@@ -1,14 +1,19 @@
 # Designed for Intel MPI
 
-MPICC = mpiicc
+MPICC=mpiicc
+OPT_FLAGS=-Ofast -fno-alias
 
-all: clean release
+all: release
 
 debug:
 	$(MPICC) -DDEBUG -g -O0 -Wall -Iinclude -ojacobi.x src/*.c
 
 release:
-	$(MPICC) -Ofast -xAVX -fno-alias -Iinclude -ojacobi.x src/*.c
+	$(MPICC) $(OPT_FLAGS) -xHost -Iinclude -ojacobi.x src/*.c
 
-clean:
-	rm -f jacobi.x
+ivybridge:
+	$(MPICC) $(OPT_FLAGS) -xIVYBRIDGE -Iinclude -ojacobi.x src/*.c
+
+skylake:
+	$(MPICC) $(OPT_FLAGS) -xSKYLAKE -Iinclude -ojacobi.x src/*.c
+
