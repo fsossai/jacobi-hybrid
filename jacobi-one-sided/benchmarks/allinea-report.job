@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#SBATCH -J report
+#SBATCH -N 10
+#SBATCH -L allinea@vsc
+#SBATCH --ntasks-per-node 16
+###SBATCH --get-user-env 
+#SBATCH --time=00:10:00
+#SBATCH --partition=mem_0128
+#SBATCH --qos=devel_0128
+
+module purge
+module load intel/18 intel-mpi/2018 allinea/18.2_PR
+
+export MPI_PROCESSES=$SLURM_NTASKS
+export I_MPI_PIN_PROCESSOR_LIST=allcores:map=bunch
+export SLURM_STEP_GRES=none
+
+perf-report mpirun -n $MPI_PROCESSES ../jacobi3d.x -i=instances3d/input-single.txt -H=2 -m

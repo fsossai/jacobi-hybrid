@@ -1,0 +1,54 @@
+#!/bin/bash
+#SBATCH -J scaling
+#SBATCH -N 1
+#SBATCH --partition=mem_0384
+#SBATCH --qos=mem_0384
+#SBATCH --tasks-per-node=48
+
+module purge > /dev/null
+module load intel/19 intel-mpi/2019 
+
+  export MPI_PROCESSES=$SLURM_NTASKS
+  export OMP_NUM_THREADS=1
+  export VERBOSE=noverbose
+
+  export KMP_AFFINITY=compact,granularity=thread,1,0
+  export I_MPI_PIN=enable
+  export I_MPI_PIN_PROCESSOR_LIST=0-47
+#  export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=24
+
+echo Nodes = $SLURM_JOB_NODELIST
+time_start=$(date +%s)
+
+if [ "$1" = "inter" ]; then
+
+	echo Running ss-internode.sh 2D on vsc4
+	./ss-internode.sh input-single.txt 2 48 4 vsc4
+	
+	echo Running ss-internode.sh 3D on vsc4
+	./ss-internode.sh input-single.txt 3 48 4 vsc4
+	
+	echo Running ws-internode.sh 2D on vsc4
+	./ws-internode.sh ws044_50 2 48 4 vsc4
+
+	echo Running ws-internode.sh 3D on vsc4
+	./ws-internode.sh ws1200_50 3 48 4 vsc4
+	
+elif [ "$1" = "intra" ]; then
+
+	echo Running ss-intranode.sh 2D on vsc4
+	./ss-intranode.sh input-small.txt 2 48 vsc4
+	
+	echo Running ss-intranode.sh 3D on vsc4
+	./ss-intranode.sh input-single.txt 3 48 vsc4
+	
+	echo Running ws-intranode.sh 2D on vsc4
+	./ws-intranode.sh ws6400_100 2 48 vsc4
+	
+	echo Running ws-intranode.sh 3D on vsc4
+	./ws-intranode.sh ws340_100 3 48 vsc4
+
+fi
+
+time_stop=$(date +%s)
+echo [*] Job execution time: $((time_stop - time_start)) seconds
