@@ -16,10 +16,7 @@ outname="bm_intra_strong${dimensions}d_${partition}_$(date +%F_%H-%M)"
 echo "Instance,Processes,NoShMem Speedup,NoShMem GFlops,ShMem s=X Speedup,ShMem s=X GFlops" > ${outname}.csv
 for (( p=1; p<=$ppn; p++ )) do
     printf "%s,%2i," $instance $p >> ${outname}.csv
-
-	if (( $p == 25 )); then
-  		export I_MPI_PIN_PROCESSOR_LIST=0-47
-	fi
+    
     # NO SHARED MEMORY
     time=0
 	perf=0
