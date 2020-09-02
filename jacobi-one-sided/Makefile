@@ -1,14 +1,19 @@
 # Designed for Intel MPI
 
-MPICC = mpiicc
+MPICC=mpiicc
+OPT_FLAGS=-Ofast -fno-alias
+OUTNAME=jacobi2d.x
 
-all: clean release
+all: release
 
 debug:
-	$(MPICC) -DDEBUG -g -O0 -Wall -Iinclude -ojacobi.x src/*.c
+	$(MPICC) -DDEBUG -g -O0 -Wall -Iinclude -o $(OUTNAME) src/*.c
 
 release:
-	$(MPICC) -Ofast -xAVX -fno-alias -Iinclude -ojacobi.x src/*.c
+	$(MPICC) $(OPT_FLAGS) -xHost -Iinclude -o $(OUTNAME) src/*.c
 
-clean:
-	rm -f jacobi.x
+ivybridge:
+	$(MPICC) $(OPT_FLAGS) -xIVYBRIDGE -Iinclude -o $(OUTNAME) src/*.c
+
+skylake:
+	$(MPICC) $(OPT_FLAGS) -xSKYLAKE -Iinclude -o $(OUTNAME) src/*.c
