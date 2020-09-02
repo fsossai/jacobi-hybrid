@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J scaling
-#SBATCH -N 1
+#SBATCH -N 16
 #SBATCH --partition=mem_0384
 #SBATCH --qos=mem_0384
 #SBATCH --tasks-per-node=48
@@ -23,16 +23,16 @@ time_start=$(date +%s)
 if [ "$1" = "inter" ]; then
 
 	echo Running ss-internode.sh 2D on vsc4
-	./ss-internode.sh input-single.txt 2 48 4 vsc4
+	./ss-internode.sh input-single.txt 2 48 16 vsc4
 	
 	echo Running ss-internode.sh 3D on vsc4
-	./ss-internode.sh input-single.txt 3 48 4 vsc4
+	./ss-internode.sh input-single.txt 3 48 16 vsc4
 	
 	echo Running ws-internode.sh 2D on vsc4
-	./ws-internode.sh ws044_50 2 48 4 vsc4
+	./ws-internode.sh ws044_50 2 48 16 vsc4
 
 	echo Running ws-internode.sh 3D on vsc4
-	./ws-internode.sh ws1200_50 3 48 4 vsc4
+	./ws-internode.sh ws1200_50 3 48 16 vsc4
 	
 elif [ "$1" = "intra" ]; then
 
