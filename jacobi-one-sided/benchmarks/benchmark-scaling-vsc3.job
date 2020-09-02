@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH -J scaling
-#SBATCH -N 12
-#SBATCH --reservation=sohpc_vsc3_mem_0128
+#SBATCH -N 16
 #SBATCH --partition=mem_0128
 #SBATCH --qos=normal_0128
 #SBATCH --tasks-per-node=16
@@ -24,16 +23,16 @@ time_start=$(date +%s)
 if [ "$1" = "inter" ]; then
 
 	echo Running ss-internode.sh 2D on vsc3
-	./ss-internode.sh input-single.txt 2 16 12 vsc3
+	./ss-internode.sh input-single.txt 2 16 16 vsc3
 	
 	echo Running ss-internode.sh 3D on vsc3
-	./ss-internode.sh input-single.txt 3 16 12 vsc3
+	./ss-internode.sh input-single.txt 3 16 16 vsc3
 	
 	echo Running ws-internode.sh 2D on vsc3
-	./ws-internode.sh ws044_50 2 16 12 vsc3
+	./ws-internode.sh ws044_50 2 16 16 vsc3
 	
 	echo Running ws-internode.sh 3D on vsc3
-	./ws-internode.sh ws1200_50 3 16 12 vsc3
+	./ws-internode.sh ws1200_50 3 16 16 vsc3
 	
 elif [ "$1" = "intra" ]; then
 
