@@ -1,55 +1,68 @@
 #!/bin/bash
 #SBATCH -J scaling
-#SBATCH -N 16
-#SBATCH --partition=mem_0128
-#SBATCH --qos=normal_0128
-#SBATCH --tasks-per-node=16
+#SBATCH -N 100
+#SBATCH --partition=mem_0064
+#SBATCH --qos=normal_0064
+#SBATCH --ntasks-per-node=16
 
 module purge > /dev/null
-module load intel/18 intel-mpi/2018 intel-mkl/2018 gcc/7.3
+module load intel/18 intel-mpi/2018
 
-  export MPI_PROCESSES=$SLURM_NTASKS
-  export OMP_NUM_THREADS=1
-  export VERBOSE=noverbose
+export MPI_PROCESSES=$SLURM_NTASKS
+export OMP_NUM_THREADS=1
+export VERBOSE=noverbose
+export KMP_AFFINITY=compact,granularity=thread,1,0
+export I_MPI_PIN=enable
+export I_MPI_PIN_PROCESSOR_LIST=0-15
+#export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=8
 
-  export KMP_AFFINITY=compact,granularity=thread,1,0
-  export I_MPI_PIN=enable
-  export I_MPI_PIN_PROCESSOR_LIST=0-15
-#  export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=8
-
+cluster_name=vsc3		# Just to distinguish the slurm output files easily
+hpn=2					# Number of heads per node (valid only for 'topology' option)
 echo Nodes = $SLURM_JOB_NODELIST
 time_start=$(date +%s)
 
 if [ "$1" = "inter" ]; then
 
-	echo Running ss-internode.sh 2D on vsc3
-	./ss-internode.sh input-single.txt 2 16 16 vsc3
+	echo "Running ss-internode.sh 2D on $cluster_name"
+	./ss-internode.sh input-single.txt 2 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
 	
-	echo Running ss-internode.sh 3D on vsc3
-	./ss-internode.sh input-single.txt 3 16 16 vsc3
+	echo "Running ss-internode.sh 3D on $cluster_name"
+	./ss-internode.sh input-single.txt 3 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
 	
-	echo Running ws-internode.sh 2D on vsc3
-	./ws-internode.sh ws044_50 2 16 16 vsc3
+	echo "Running ws-internode.sh 2D on $cluster_name"
+	./ws-internode.sh ws044_50 2 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
 	
-	echo Running ws-internode.sh 3D on vsc3
-	./ws-internode.sh ws1200_50 3 16 16 vsc3
+	echo "Running ws-internode.sh 3D on $cluster_name"
+	./ws-internode.sh ws1200_50 3 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
 	
 elif [ "$1" = "intra" ]; then
 
-	echo Running ss-intranode.sh 2D on vsc3
-	./ss-intranode.sh input-small.txt 2 16 vsc3
+	echo "Running ss-intranode.sh 2D on $cluster_name"
+	./ss-intranode.sh input-single-reduced.txt 2 $SLURM_NTASKS_PER_NODE $cluster_name
 	
-	echo Running ss-intranode.sh 3D on vsc3
-	./ss-intranode.sh input-single-reduced.txt 3 16 vsc3
+	echo "Running ss-intranode.sh 3D on $cluster_name"
+	./ss-intranode.sh input-single-reduced.txt 3 $SLURM_NTASKS_PER_NODE $cluster_name
 	
-	echo Running ws-intranode.sh 2D on vsc3
-	./ws-intranode.sh ws011_70 2 16 vsc3
+	echo "Running ws-intranode.sh 2D on $cluster_name"
+	./ws-intranode.sh ws011_70 2 $SLURM_NTASKS_PER_NODE $cluster_name
 	
-	echo Running ws-intranode.sh 3D on vsc3
-	./ws-intranode.sh ws470_70 3 16 vsc3
+	echo "Running ws-intranode.sh 3D on $cluster_name"
+	./ws-intranode.sh ws470_70 3 $SLURM_NTASKS_PER_NODE $cluster_name
+
+elif [ "$1" = "topology" ]; then
+
+	echo "Running ws-topology.sh 2D on $cluster_name"
+	./ws-topology.sh ws044_50 2 $SLURM_NTASKS_PER_NODE $hpn $SLURM_JOB_NUM_NODES $cluster_name
+
+	echo "Running ws-topology.sh 3D on $cluster_name"
+	./ws-topology.sh ws1200_50 3 $SLURM_NTASKS_PER_NODE $hpn $SLURM_JOB_NUM_NODES $cluster_name
+
+else
+
+	echo "ERROR: Unrecognized parameter!"
 
 fi
 
-
 time_stop=$(date +%s)
 echo [*] Job execution time: $((time_stop - time_start)) seconds
+
