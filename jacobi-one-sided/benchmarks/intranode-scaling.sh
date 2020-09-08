@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if (( $# < 6 )); then
-	echo Usage: $0 <dimensions> <start_size> <iterations> <ppn> <mode> <partition>
+	echo "Usage: $0 <dimensions> <start_size> <iterations> <ppn> <mode> <partition>"
     echo "<mode> must be 'strong' or 'weak'"
 	exit 1
 fi
@@ -17,7 +17,7 @@ heads=1
 separator="|," 
 
 if [[ ! $mode =~ ^(strong|weak) ]]; then
-    echo "ERROR: [mode] must be 'strong' or 'weak'"
+    echo "ERROR: <mode> must be 'strong' or 'weak'"
     exit 1
 fi
 outname="bm_${partition}_intra_${mode}${dimensions}d_$(date +%F_%H-%M)"

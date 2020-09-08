@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if (( $# < 7 )); then
-	echo Usage: $0 <dimensions> <start_size> <iterations> <ppn> <nnodes> <mode> <partition>
+	echo "Usage: $0 <dimensions> <start_size> <iterations> <ppn> <nnodes> <mode> <partition>"
     echo "<mode> must be 'strong' or 'weak'"
 	exit 1
 fi
@@ -18,7 +18,7 @@ heads=2
 separator="|," 
 
 if [[ ! $mode =~ ^(strong|weak) ]]; then
-    echo "ERROR: [mode] must be 'strong' or 'weak'"
+    echo "ERROR: <mode> must be 'strong' or 'weak'"
     exit 1
 fi
 outname="bm_${partition}_inter_${mode}${dimensions}d_$(date +%F_%H-%M)"
