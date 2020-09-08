@@ -13,8 +13,8 @@ mode=$4
 
 if [ "$mode" = "intranode" ]; then
 	nnodes=""
-    start_size_2d=9000
-    start_size_3d=400
+    start_size_2d=20000
+    start_size_3d=700
 elif [ "$mode" = "internode" ]; then
 	nnodes=$SLURM_JOB_NUM_NODES
     start_size_2d=44000
