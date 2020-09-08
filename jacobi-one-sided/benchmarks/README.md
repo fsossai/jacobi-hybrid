@@ -1,4 +1,4 @@
-This folder contains only job files and scripts to extensively benchmark either the
+This folder contains only job files and scripts to extensively benchmark both the
 pure and the hybrid version of the Jacobi.
 
 ## Overview
@@ -6,6 +6,8 @@ pure and the hybrid version of the Jacobi.
 The baseline for parallel efficiency is a single MPI process.
 - **internode**: Tests the scalability using, one by one, a given number of computing nodes in which all available cores
 are used. The baseline for parallel efficiency is an entire node.
+- **topology**: Tests how the cartesian topology can affect performance. Compares results obtained using an LxL decomposition
+and an (L^2)x1 (i.e. unidimensional) domain decompositions.
 `benchmark-vsc3.job`, `benchmark-vsc3plus.job`, and `benchmark-vsc4.job` are job files already configured
 for the three different architectures.
 Both _intranode_ and _internode_ types of scaling can be benchmarked using `benchmark-general.sh` which is
@@ -17,7 +19,7 @@ can be changed in `benchmark-scaling.sh`. The latter will automatically test the
 
 ### Call structure
 
-This shell scripts are thought to be modular and flexible.
+This shell scripts are thought to be modular and flexible. The rightmost files are called by the leftmost ones.
 
 ```
 |-> benchmark-general.sh
@@ -29,8 +31,8 @@ This shell scripts are thought to be modular and flexible.
 ```
 
 ### Examples
-To submit to Slurm an internode scaling benchmark on VSC4:
-```sbatch benchmark-vsc4.job internode```
+To submit to the [Slurm workload manager](https://slurm.schedmd.com/documentation.html) an internode scaling benchmark on VSC4:
+```sbatch benchmark-vsc4.job intranode```
 
 The job will produce a set of files in a csv and table format:
 ```

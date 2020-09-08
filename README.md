@@ -4,6 +4,8 @@
 This is an MPI parallel implementation of the Jacobi algorithm that is meant to exploit both distributed and shared memory.
 This does not make use of threads: physical shared memory is managed through MPI one-sided communication features of MPI 3.0.
 
+<p align="center"><img src="images/logo_prace.png" align="right" width="314" height="200"></img></p>
+
 ## Motivation and Description
 This project aims to develop a numerical solver of a differential equation using the so called Jacobi algorithm. In layman's terms this simple algorithm iteratively computes a grid of points from a previous one in which every point depends only on its neighbours in the previous grid.
 If the grid gets splitted in sub-grids (in order to feed different distributed nodes), points at the boundaries will depend on points which are
@@ -15,7 +17,7 @@ Some hybrid programming models combine two different standards like MPI and Open
 memory by means of the so called one-sided communications feature.
 
 ## Benchmarks
-The following is a complete list of command line option that the software supports:
+The following is a complete list of command line option that the software supports (3D version):
 
 ```
 Usage: jacobi [-m] [-s=DIRECTION] [-n=DIRECTION] [-H=NUM] [-i=FILENAME] [-h]
@@ -52,27 +54,33 @@ The three clusters used are called [VSC3](https://vsc.ac.at/systems/vsc-3/), [VS
 the latter system is ranked 105 in the TOP500 list at the time of writing (September 2020).
 
 Details of a VSC4's node:
-```CPU name:       Intel(R) Xeon(R) Platinum 8174 CPU @ 3.10GHz
+```
+CPU name:       Intel(R) Xeon(R) Platinum 8174 CPU @ 3.10GHz
 CPU type:       Intel Skylake SP processor
 CPU stepping:   4
 Sockets:                2
 Cores per socket:       24
-Threads per core:       2```
+Threads per core:       2
+```
 
 Details of a VSC3's node:
-```CPU name:       Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz
+```
+CPU name:       Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz
 CPU type:       Intel Xeon IvyBridge EN/EP/EX processor
 Sockets:                2
 Cores per socket:       8
-Threads per core:       2```
+Threads per core:       2
+```
 
 Details of a VSC3plus' node:
-```CPU name:       Intel(R) Xeon(R) CPU E5-2660 v2 @ 2.20GHz
+```
+CPU name:       Intel(R) Xeon(R) CPU E5-2660 v2 @ 2.20GHz
 CPU type:       Intel Xeon IvyBridge EN/EP/EX processor
 CPU stepping:   4
 Sockets:                2
 Cores per socket:       10
-Threads per core:       2```
+Threads per core:       2
+```
 
 In the plots, _Pure_ refers to the version that do not consider the shared memory within each node,
 whereas _Hybrid_ assigns a communicating process per socket and the others works inside its shared memory
@@ -80,3 +88,12 @@ using MPI One-sided communications.
 Process **pinning** plays a fundamental role in affecting the intranode scaling.
 For VSC4, _Incremental pinning_ is obtained setting `export I_MPI_PIN_PROCESSOR_LIST=0-47`,
 whereas _Round-robin pinning_ is obtained with `export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=24`
+
+## Acknoledgements
+
+This project has been developed during my participation to [PRACE Summer of HPC](https://summerofhpc.prace-ri.eu/info/) 2020.
+I would like to thank [Claudia Blaas-Schenner](https://tiss.tuwien.ac.at/fpl/person/index.xhtml?cid=1), [Irene Reichl](https://tiss.tuwien.ac.at/fpl/person/index.xhtml?id=106886) and [David Fischak](linkedin.com/in/davidfischak) for their support.
+I'm also thankful to [PRACE](https://prace-ri.eu/), [VSC](https://vsc.ac.at/) and [TU Wien](https://www.tuwien.at/) for givin me
+this opportunity.
+
+
