@@ -1,19 +1,4 @@
 #!/bin/bash
-#SBATCH -J scaling
-#SBATCH -N 100
-#SBATCH --partition=vsc3plus_0064
-#SBATCH --qos=vsc3plus_0064
-#SBATCH --ntasks-per-node=20
-
-module purge > /dev/null
-module load intel/18 intel-mpi/2018
-
-export OMP_NUM_THREADS=1
-export VERBOSE=noverbose
-export KMP_AFFINITY=compact,granularity=thread,1,0
-export I_MPI_PIN=enable
-export I_MPI_PIN_PROCESSOR_LIST=0-19
-#export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=10
 
 if (( $# < 1 )); then
 	echo "Usage: $0 <mode>"
@@ -21,7 +6,7 @@ if (( $# < 1 )); then
 	exit 1
 fi
 
-cluster_name=vsc3plus	# Just to distinguish the slurm output files easily
+cluster_name=vsc3		# Just to distinguish the slurm output files easily
 hpn=2					# Number of heads per node (valid only for 'topology' option)
 echo "Nodes = $SLURM_JOB_NODELIST"
 echo "Maximum number of MPI processes: $SLURM_NTASKS"
@@ -31,7 +16,7 @@ time_start=$(date +%s)
 if [[ $mode =~ ^(intranode|internode) ]]; then
 	./benchmark-scaling.sh $cluster_name $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $mode
 elif [ "$mode" = "topology" ]; then
-	./benchmark-topology.sh $cluster_name $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES
+	./benchmark-topology.sh $cluster_name $SLURM_NTASKS
 else
 	echo "ERROR: Unrecognized argument '$mode'"
 	echo "Available arguments: 'intranode', 'internode', 'topology'"

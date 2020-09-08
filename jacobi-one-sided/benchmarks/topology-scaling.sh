@@ -1,16 +1,15 @@
 #!/bin/bash
 
 if (( $# < 6 )); then
-    echo Usage: $0 <dimensions> <start_size> <iterations> <ppn> <nnodes> <partition>
+    echo "Usage: $0 <dimensions> <start_size> <iterations> <max_procs> <partition>"
     exit 1
 fi
 
 dimensions=$1
 start_size=$2
 iterations=$3
-ppn=$4
-nnodes=$5
-partition=$6
+max_procs=$4
+partition=$5
 runs=1
 outname="bm_${partition}_topo${dimensions}d_$(date +%F_%H-%M)"
 separator="|,"
@@ -23,8 +22,8 @@ echo "Benchmarking the effects of different domain decompositions on $cluster_na
 echo "${dimensions}D version"
 echo ""
 
-echo "Instance,Processes,${separator}P:Topology,P:Performance,P:Time,${separator}H:Topology,H:Performance,H:Time" > ${outname}.csv
-s_max=$(awk '{ print int( ($1 * $2) ^ (1 / $3) ) }' <<< "$nnodes $ppn $dimensions")
+echo "Instance,Procs,${separator}M:Topology,M:Performance,M:Time,${separator}U:Topology,U:Performance,U:Time" > ${outname}.csv
+s_max=$(awk '{ print int( $1 ^ (1 / $2) ) }' <<< "$max_procs $dimensions")
 for (( s=1; s<=$s_max; s++ )) do
     p=$(awk '{ printf "%i", ($1 ^ $2) }' <<< "$s $dimensions")
     size=$(awk '{ printf "%.0f", $1 * ($2 ^ (1 / $3)) }' <<< "$start_size $p $dimensions" )

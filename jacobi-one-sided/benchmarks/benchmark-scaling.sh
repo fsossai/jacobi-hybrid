@@ -13,8 +13,12 @@ mode=$4
 
 if [ "$mode" = "intranode" ]; then
 	nnodes=""
+    start_size_2d=9000
+    start_size_3d=400
 elif [ "$mode" = "internode" ]; then
 	nnodes=$SLURM_JOB_NUM_NODES
+    start_size_2d=44000
+    start_size_3d=1200
 else
     echo "ERROR: Wrong argument for <mode> ($mode)"
     echo "mode: intranode | internode"
@@ -22,13 +26,13 @@ else
 fi
 
 echo "Running ${mode}-scaling.sh (2D / strong) on $cluster_name"
-./${mode}-scaling.sh 2 44000 50 $ppn $nnodes strong $cluster_name
+./${mode}-scaling.sh 2 $start_size_2d 50 $ppn $nnodes strong $cluster_name
 
 echo "Running ${mode}-scaling.sh (3D / strong) on $cluster_name"
-./${mode}-scaling.sh 3 1200 50 $ppn $nnodes strong $cluster_name
+./${mode}-scaling.sh 3 $start_size_3d 50 $ppn $nnodes strong $cluster_name
 
 echo "Running ${mode}-scaling.sh (2D / weak) on $cluster_name"
-./${mode}-scaling.sh 2 44000 50 $ppn $nnodes weak $cluster_name
+./${mode}-scaling.sh 2 $start_size_2d 50 $ppn $nnodes weak $cluster_name
 
 echo "Running ${mode}-scaling.sh (3D / weak) on $cluster_name"
-./${mode}-scaling.sh 3 1200 50 $ppn $nnodes weak $cluster_name
+./${mode}-scaling.sh 3 $start_size_3d 50 $ppn $nnodes weak $cluster_name

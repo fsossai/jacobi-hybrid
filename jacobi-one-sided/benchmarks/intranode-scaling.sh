@@ -26,7 +26,7 @@ echo "Benchmark: ${mode} scaling intranode"
 echo "${dimensions}D version, using $heads heads per node"
 echo ""
 
-echo "Instance,Processes,${separator}P:Topology,P:Efficiency,P:Performance,P:Time,${separator}H:Topology,H:Efficiency,H:Performance,H:Time" > ${outname}.csv
+echo "Instance,Procs,${separator}P:Topology,P:Efficiency,P:Performance,P:Time,${separator}H:Topology,H:Efficiency,H:Performance,H:Time" > ${outname}.csv
 for (( p=1; p<=$ppn; p++ )) do
     if [ "$mode" = "strong" ]; then
         size=$start_size
