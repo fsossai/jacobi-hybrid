@@ -1,10 +1,10 @@
 # Hybrid implementation of Jacobi algorithm
 
+<p align="center"><img src="images/logo_prace.png" align="right" width="314" height="200"></img></p>
+
 ## Summary
 This is an MPI parallel implementation of the Jacobi algorithm that is meant to exploit both distributed and shared memory.
 This does not make use of threads: physical shared memory is managed through MPI one-sided communication features of MPI 3.0.
-
-<p align="center"><img src="images/logo_prace.png" align="right" width="314" height="200"></img></p>
 
 ## Motivation and Description
 This project aims to develop a numerical solver of a differential equation using the so called Jacobi algorithm. In layman's terms this simple algorithm iteratively computes a grid of points from a previous one in which every point depends only on its neighbours in the previous grid.
@@ -87,13 +87,14 @@ whereas _Hybrid_ assigns a communicating process per socket and the others works
 using MPI One-sided communications.
 Process **pinning** plays a fundamental role in affecting the intranode scaling.
 For VSC4, _Incremental pinning_ is obtained setting `export I_MPI_PIN_PROCESSOR_LIST=0-47`,
-whereas _Round-robin pinning_ is obtained with `export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=24`
+whereas _Round-robin pinning_ is obtained with `export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=24`.
 
 ## Acknoledgements
 
 This project has been developed during my participation to [PRACE Summer of HPC](https://summerofhpc.prace-ri.eu/info/) 2020.
 I would like to thank [Claudia Blaas-Schenner](https://tiss.tuwien.ac.at/fpl/person/index.xhtml?cid=1), [Irene Reichl](https://tiss.tuwien.ac.at/fpl/person/index.xhtml?id=106886) and [David Fischak](linkedin.com/in/davidfischak) for their support.
-I'm also thankful to [PRACE](https://prace-ri.eu/), [VSC](https://vsc.ac.at/) and [TU Wien](https://www.tuwien.at/) for givin me
+I'm also thankful to [PRACE](https://prace-ri.eu/), [VSC](https://vsc.ac.at/) and [TU Wien](https://www.tuwien.at/) for giving me
 this opportunity.
 
-
+<p align="center"><img src="images/logo_vsc.png" align="left" width="200" height="125"></img></p>
+<p align="center"><img src="images/logo_tuwien.png" align="right" width="329" height="125"></img></p>
