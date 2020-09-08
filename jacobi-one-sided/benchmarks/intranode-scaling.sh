@@ -2,7 +2,7 @@
 
 if (( $# < 6 )); then
 	echo "Usage: $0 <dimensions> <start_size> <iterations> <ppn> <mode> <partition>"
-    echo "<mode> must be 'strong' or 'weak'"
+    echo "mode: strong | weak"
 	exit 1
 fi
 
@@ -36,7 +36,7 @@ for (( p=1; p<=$ppn; p++ )) do
 
 	# Logging problem size and processes
     printf "(%i)^%i," $size $dimensions >> ${outname}.csv
-    printf "%3i,${separator}" $p >> ${outname}.csv
+    printf "%i,${separator}" $p >> ${outname}.csv
 
     # Preparing instance
     instance="${size}\n"
@@ -108,7 +108,7 @@ for (( p=1; p<=$ppn; p++ )) do
     time=$(echo "scale=3; $time / $runs" | bc)
     perf=$(echo "scale=3; ($perf / $runs) / 1000" | bc)
 	topology=$(echo "$output" | grep topology | egrep -oe "[0-9]+(x[0-9]*)*")
-    if [ $nodes -eq 1 ]; then
+    if [ $p -eq 1 ]; then
         baseline_hybrid=$time
     fi
 

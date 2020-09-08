@@ -12,11 +12,11 @@ nnodes=$3
 mode=$4
 
 if [ "$mode" = "intranode" ]; then
-	nnodes=$SLURM_JOB_NUM_NODES
-elif [ "$mode" = "internode" ]; then
 	nnodes=""
+elif [ "$mode" = "internode" ]; then
+	nnodes=$SLURM_JOB_NUM_NODES
 else
-    echo "ERROR: Wromg argument for <mode> ($mode)"
+    echo "ERROR: Wrong argument for <mode> ($mode)"
     echo "mode: intranode | internode"
     exit 1
 fi

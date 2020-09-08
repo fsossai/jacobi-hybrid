@@ -2,7 +2,7 @@
 
 if (( $# < 7 )); then
 	echo "Usage: $0 <dimensions> <start_size> <iterations> <ppn> <nnodes> <mode> <partition>"
-    echo "<mode> must be 'strong' or 'weak'"
+    echo "mode: strong | weak"
 	exit 1
 fi
 
@@ -39,7 +39,7 @@ for (( nodes=1; nodes<=$nnodes; nodes++ )) do
 
 	# Logging problem size and nodes
     printf "(%i)^%i," $size $dimensions >> ${outname}.csv
-    printf "%3i,${separator}" $nodes >> ${outname}.csv
+    printf "%i,${separator}" $nodes >> ${outname}.csv
 
     # Preparing instance
     instance="${size}\n"
