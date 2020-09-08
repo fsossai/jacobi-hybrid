@@ -1,16 +1,15 @@
 #!/bin/bash
 
-if (( $# < 1 )); then
-	echo "Usage: $0 <mode>"
+if (( $# < 2 )); then
+	echo "Usage: $0 <cluster_name> <mode>"
 	echo "mode:	intranode | internode | topology"
 	exit 1
 fi
 
-cluster_name=vsc3		# Just to distinguish the slurm output files easily
-hpn=2					# Number of heads per node (valid only for 'topology' option)
+cluster_name=$1
+mode=$2
 echo "Nodes = $SLURM_JOB_NODELIST"
 echo "Maximum number of MPI processes: $SLURM_NTASKS"
-mode=$1
 time_start=$(date +%s)
 
 if [[ $mode =~ ^(intranode|internode) ]]; then

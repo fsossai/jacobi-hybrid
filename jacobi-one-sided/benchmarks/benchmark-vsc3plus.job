@@ -16,4 +16,4 @@ export I_MPI_PIN_PROCESSOR_LIST=0-19
 #export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=10
 
 cluster_name=vsc3plus	# Just to distinguish the slurm output files easily
-. benchmark-general.sh
+./benchmark-general.sh $cluster_name $@
