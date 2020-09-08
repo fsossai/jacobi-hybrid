@@ -8,7 +8,6 @@
 module purge > /dev/null
 module load intel/18 intel-mpi/2018
 
-export MPI_PROCESSES=$SLURM_NTASKS
 export OMP_NUM_THREADS=1
 export VERBOSE=noverbose
 export KMP_AFFINITY=compact,granularity=thread,1,0
@@ -16,51 +15,35 @@ export I_MPI_PIN=enable
 export I_MPI_PIN_PROCESSOR_LIST=0-15
 #export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=8
 
+if (( $# < 1 )); then
+	echo "Usage: $0 <mode>"
+	echo "mode:	intranode | internode | topology"
+	exit 1
+fi
+
 cluster_name=vsc3		# Just to distinguish the slurm output files easily
 hpn=2					# Number of heads per node (valid only for 'topology' option)
-echo Nodes = $SLURM_JOB_NODELIST
+echo "Nodes = $SLURM_JOB_NODELIST"
+echo "Maximum number of MPI processes: $SLURM_NTASKS"
+mode=$1
 time_start=$(date +%s)
 
-if [ "$1" = "inter" ]; then
+if [[ $mode =~ ^(intranode|internode) ]]; then
 
-	echo "Running ss-internode.sh 2D on $cluster_name"
-	./ss-internode.sh input-single.txt 2 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
-	
-	echo "Running ss-internode.sh 3D on $cluster_name"
-	./ss-internode.sh input-single.txt 3 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
-	
-	echo "Running ws-internode.sh 2D on $cluster_name"
-	./ws-internode.sh ws044_50 2 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
-	
-	echo "Running ws-internode.sh 3D on $cluster_name"
-	./ws-internode.sh ws1200_50 3 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
-	
-elif [ "$1" = "intra" ]; then
+	./benchmark-scaling.sh $cluster_name $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $mode
 
-	echo "Running ss-intranode.sh 2D on $cluster_name"
-	./ss-intranode.sh input-single-reduced.txt 2 $SLURM_NTASKS_PER_NODE $cluster_name
-	
-	echo "Running ss-intranode.sh 3D on $cluster_name"
-	./ss-intranode.sh input-single-reduced.txt 3 $SLURM_NTASKS_PER_NODE $cluster_name
-	
-	echo "Running ws-intranode.sh 2D on $cluster_name"
-	./ws-intranode.sh ws011_70 2 $SLURM_NTASKS_PER_NODE $cluster_name
-	
-	echo "Running ws-intranode.sh 3D on $cluster_name"
-	./ws-intranode.sh ws470_70 3 $SLURM_NTASKS_PER_NODE $cluster_name
+elif [ "$mode" = "topology" ]; then
 
-elif [ "$1" = "topology" ]; then
+	echo "Running topology-scaling.sh 2D on $cluster_name"
+	./topology-scaling.sh 2 44000 50 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
 
-	echo "Running ws-topology.sh 2D on $cluster_name"
-	./ws-topology.sh ws044_50 2 $SLURM_NTASKS_PER_NODE $hpn $SLURM_JOB_NUM_NODES $cluster_name
-
-	echo "Running ws-topology.sh 3D on $cluster_name"
-	./ws-topology.sh ws1200_50 3 $SLURM_NTASKS_PER_NODE $hpn $SLURM_JOB_NUM_NODES $cluster_name
+	echo "Running topology-scaling.sh 3D on $cluster_name"
+	./topology-scaling.sh 3 1200 50 $SLURM_NTASKS_PER_NODE $SLURM_JOB_NUM_NODES $cluster_name
 
 else
-
-	echo "ERROR: Unrecognized parameter!"
-
+	echo "ERROR: Unrecognized argument '$mode'"
+	echo "Available arguments: 'intranode', 'internode', 'topology'"
+	exit 1
 fi
 
 time_stop=$(date +%s)

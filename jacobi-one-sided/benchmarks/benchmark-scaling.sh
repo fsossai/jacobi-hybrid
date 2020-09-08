@@ -22,13 +22,13 @@ else
 fi
 
 echo "Running ${mode}-scaling.sh (2D / strong) on $cluster_name"
-./${mode}-scaling.sh 44000 50 2 $ppn $nnodes strong $cluster_name
+./${mode}-scaling.sh 2 44000 50 $ppn $nnodes strong $cluster_name
 
 echo "Running ${mode}-scaling.sh (3D / strong) on $cluster_name"
-./${mode}-scaling.sh 1200 50 3 $ppn $nnodes strong $cluster_name
+./${mode}-scaling.sh 3 1200 50 $ppn $nnodes strong $cluster_name
 
 echo "Running ${mode}-scaling.sh (2D / weak) on $cluster_name"
-./${mode}-scaling.sh 44000 50 2 $ppn $nnodes weak $cluster_name
+./${mode}-scaling.sh 2 44000 50 $ppn $nnodes weak $cluster_name
 
 echo "Running ${mode}-scaling.sh (3D / weak) on $cluster_name"
-./${mode}-scaling.sh 1200 50 3 $ppn $nnodes weak $cluster_name
+./${mode}-scaling.sh 3 1200 50 $ppn $nnodes weak $cluster_name

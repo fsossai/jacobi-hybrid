@@ -1,19 +1,20 @@
 #!/bin/bash
 
 if (( $# < 6 )); then
-	echo Usage: $0 [start_size] [iterations] [dimensions] [ppn] [mode] [partition]
-    echo "[mode] must be 'strong' or 'weak'"
+	echo Usage: $0 <dimensions> <start_size> <iterations> <ppn> <mode> <partition>
+    echo "<mode> must be 'strong' or 'weak'"
 	exit 1
 fi
 
-start_size=$1
-iterations=$2
-dimensions=$3
+dimensions=$1
+start_size=$2
+iterations=$3
 ppn=$4
 mode=$5
 partition=$6
 runs=1
 heads=1
+separator="|," 
 
 if [[ ! $mode =~ ^(strong|weak) ]]; then
     echo "ERROR: [mode] must be 'strong' or 'weak'"
@@ -25,7 +26,7 @@ echo "Benchmark: ${mode} scaling intranode"
 echo "${dimensions}D version, using $heads heads per node"
 echo ""
 
-echo "Instance,Processes,P:Topology,P:Efficiency,P:Performance,P:Time,H:Topology,H:Efficiency,H:Performance,H:Time" > ${outname}.csv
+echo "Instance,Processes,${separator}P:Topology,P:Efficiency,P:Performance,P:Time,${separator}H:Topology,H:Efficiency,H:Performance,H:Time" > ${outname}.csv
 for (( p=1; p<=$ppn; p++ )) do
     if [ "$mode" = "strong" ]; then
         size=$start_size
@@ -33,9 +34,9 @@ for (( p=1; p<=$ppn; p++ )) do
 	    size=$(awk '{ printf "%.0f", $1 * ($2 ^ (1 / $3)) }' <<< "$start_size $p $dimensions" )
     fi
 
-	# Logging problem size and nodes
+	# Logging problem size and processes
     printf "(%i)^%i," $size $dimensions >> ${outname}.csv
-    printf "%3i," $p >> ${outname}.csv
+    printf "%3i,${separator}" $p >> ${outname}.csv
 
     # Preparing instance
     instance="${size}\n"
@@ -66,13 +67,13 @@ for (( p=1; p<=$ppn; p++ )) do
     time=$(echo "scale=3; $time / $runs" | bc)
     perf=$(echo "scale=3; ($perf / $runs) / 1000" | bc)
 	topology=$(echo "$output" | grep topology | egrep -oe "[0-9]+(x[0-9]*)*")
-    if [ $nodes -eq 1 ]; then
+    if [ $p -eq 1 ]; then
         baseline_pure=$time
     fi
 
     # Computing efficiency
     if [ "$mode" = "strong" ]; then
-        efficiency=$(echo "scale=3; $baseline_pure / $time / $nodes" | bc)
+        efficiency=$(echo "scale=3; $baseline_pure / $time / $p" | bc)
     elif [ "$mode" = "weak" ]; then
         efficiency=$(echo "scale=3; $baseline_pure / $time" | bc)
     fi
@@ -81,7 +82,7 @@ for (( p=1; p<=$ppn; p++ )) do
 	printf "%s," $topology >> ${outname}.csv
 	printf "%.3f," $efficiency >> ${outname}.csv
 	printf "%.3f," $perf >> ${outname}.csv
-	printf "%.3f," $time >> ${outname}.csv
+	printf "%.3f,${separator}" $time >> ${outname}.csv
 
 	# ---------------------------------------------------------------------------------
 
@@ -113,7 +114,7 @@ for (( p=1; p<=$ppn; p++ )) do
 
     # Computing efficiency
     if [ "$mode" = "strong" ]; then
-        efficiency=$(echo "scale=3; $baseline_hybrid / $time / $nodes" | bc)
+        efficiency=$(echo "scale=3; $baseline_hybrid / $time / $p" | bc)
     elif [ "$mode" = "weak" ]; then
         efficiency=$(echo "scale=3; $baseline_hybrid / $time" | bc)
     fi

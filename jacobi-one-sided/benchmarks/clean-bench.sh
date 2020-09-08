@@ -1,2 +1,2 @@
 #!/bin/bash
-rm -f bm* slurm* *btr
+rm -f bm* slurm*.out *.btr

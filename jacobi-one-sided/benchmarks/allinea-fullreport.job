@@ -16,4 +16,4 @@ export MPI_PROCESSES=$SLURM_NTASKS
 export I_MPI_PIN_PROCESSOR_LIST=allcores:map=bunch
 export SLURM_STEP_GRES=none
 
-map --profile mpirun -n $MPI_PROCESSES ../jacobi.x -i=instances3d/input-big.txt -H=2 -s=X
+map --profile mpirun -n $MPI_PROCESSES ../jacobi.x -i=../instances/3d-big.txt -H=2 -s=X
