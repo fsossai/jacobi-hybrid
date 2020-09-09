@@ -16,8 +16,8 @@ Jacobi is not the best candidate to carry out the numerical job, but here the ma
 Some hybrid programming models combine two different standards like MPI and OpenMP to take advantage of the underlying architecture, however in my project I will pursue different path, using MPI 3.0 shared memory that allows to exploit shared 
 memory by means of the so called one-sided communications feature.
 
-## Benchmarks
-The following is a complete list of command line option that the software supports (3D version):
+## Command line options
+The following is a complete list of command line options that the software supports (3D version):
 
 ```
 Usage: jacobi [-m] [-s=DIRECTION] [-n=DIRECTION] [-H=NUM] [-i=FILENAME] [-h]
@@ -47,11 +47,33 @@ Author          : Federico Sossai, federico.sossai@gmail.com
 Source code     : https://github.com/fsossai/jacobi-hybrid
 ```
 
+## Benchmarks
+
 All benchmarks have been done on partitions of the computing node of the supercomputers kindly provided by
 [Vienna Scientific Cluster](https://vsc.ac.at/).
 The three clusters used are called [VSC3](https://vsc.ac.at/systems/vsc-3/), [VSC3plus](https://vsc.ac.at/systems/vsc-3/) and
 [VSC4](https://vsc.ac.at/systems/vsc-4/);
 the latter system is ranked 105 in the TOP500 list at the time of writing (September 2020).
+
+The internode results have been carried out using [weak scaling](https://en.wikipedia.org/wiki/Scalability#Weak_versus_strong_scaling)
+keeping the problem size large in order to avoid non-realistic speedups generally obtained when smaller problems fit into the cache.
+In the plots, _Pure_ refers to the version that do not consider the shared memory within each node,
+whereas _Hybrid_ assigns a communicating process per socket and the others works inside its shared memory
+using MPI One-sided communications therefore, a socket is considered as the shared memory region.
+The pure version scales almost perfectly but the hybrid one is not able to be on-par.
+A reason for this may be traced back to implementation details of the MPI One-sided communications.
+
+Process **pinning** plays a fundamental role in affecting the intranode scaling.
+For VSC4 _Incremental pinning_ is obtained setting `export I_MPI_PIN_PROCESSOR_LIST=0-47`, whereas _Round-robin pinning_ is obtained with `export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=24`.
+For VSC3 _Incremental pinning_ is obtained setting `export I_MPI_PIN_PROCESSOR_LIST=0-15`, whereas _Round-robin pinning_ is obtained with `export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=8`.
+As it can be seen from the to intranode plots, using the incremental pinning, the memory bandwidth of the socket saturates quickly
+limiting the scalability. As soon as the second socket comes into play, the scaling gets linear again, this time with a lower slope
+because in this system, the Quick Path Interconnect provides half of the bandwidth w.r.t. the bus.
+On the other hand, filling the sockets in a round-robin fashion, saturates the memory bandwidth slower, but eventually reaching
+the same performance level.
+
+The intranode scaling on VSC3 show clearly how the domain decomposition can affect the performance: the highest peek is obtained
+at 8 cores, that is, a perfect 2x2x2 cubic cartesian topology.
 
 Details of a VSC4's node:
 ```
@@ -81,13 +103,6 @@ Sockets:                2
 Cores per socket:       10
 Threads per core:       2
 ```
-
-In the plots, _Pure_ refers to the version that do not consider the shared memory within each node,
-whereas _Hybrid_ assigns a communicating process per socket and the others works inside its shared memory
-using MPI One-sided communications.
-Process **pinning** plays a fundamental role in affecting the intranode scaling.
-For VSC4, _Incremental pinning_ is obtained setting `export I_MPI_PIN_PROCESSOR_LIST=0-47`,
-whereas _Round-robin pinning_ is obtained with `export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=24`.
 
 ## Acknoledgements
 
