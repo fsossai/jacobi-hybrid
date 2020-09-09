@@ -55,6 +55,8 @@ The three clusters used are called [VSC3](https://vsc.ac.at/systems/vsc-3/), [VS
 [VSC4](https://vsc.ac.at/systems/vsc-4/);
 the latter system is ranked 105 in the TOP500 list at the time of writing (September 2020).
 
+<p align="center"><img src="images/internode_vsc3_3d.png" align="center" width="640" height="478"></img></p>
+
 The internode results have been carried out using [weak scaling](https://en.wikipedia.org/wiki/Scalability#Weak_versus_strong_scaling)
 keeping the problem size large in order to avoid non-realistic speedups generally obtained when smaller problems fit into the cache.
 In the plots, _Pure_ refers to the version that do not consider the shared memory within each node,
@@ -63,16 +65,21 @@ using MPI One-sided communications therefore, a socket is considered as the shar
 The pure version scales almost perfectly but the hybrid one is not able to be on-par.
 A reason for this may be traced back to implementation details of the MPI One-sided communications.
 
+<p align="center"><img src="images/intranode_vsc4_2d.png" align="center" width="640" height="478"></img></p>
+
 Process **pinning** plays a fundamental role in affecting the intranode scaling.
 For VSC4 _Incremental pinning_ is obtained setting `export I_MPI_PIN_PROCESSOR_LIST=0-47`, whereas _Round-robin pinning_ is obtained with `export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=24`.
 For VSC3 _Incremental pinning_ is obtained setting `export I_MPI_PIN_PROCESSOR_LIST=0-15`, whereas _Round-robin pinning_ is obtained with `export I_MPI_PIN_PROCESSOR_LIST=allcores:grain=1,shift=8`.
+
+<p align="center"><img src="images/intranode_vsc3_3d.png" align="center" width="640" height="478"></img></p>
+
 As it can be seen from the to intranode plots, using the incremental pinning, the memory bandwidth of the socket saturates quickly
 limiting the scalability. As soon as the second socket comes into play, the scaling gets linear again, this time with a lower slope
 because in this system, the Quick Path Interconnect provides half of the bandwidth w.r.t. the bus.
 On the other hand, filling the sockets in a round-robin fashion, saturates the memory bandwidth slower, but eventually reaching
 the same performance level.
 
-The intranode scaling on VSC3 show clearly how the domain decomposition can affect the performance: the highest peek is obtained
+The 3D version of the intranode scaling on VSC3 shows clearly how the domain decomposition can affect the performance: the highest peek is obtained
 at 8 cores, that is, a perfect 2x2x2 cubic cartesian topology.
 
 Details of a VSC4's node:
