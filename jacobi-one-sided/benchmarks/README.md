@@ -8,6 +8,7 @@ The baseline for parallel efficiency is a single MPI process.
 are used. The baseline for parallel efficiency is an entire node.
 - **topology**: Tests how the cartesian topology can affect performance. Compares results obtained using an LxL decomposition
 and an (L^2)x1 (i.e. unidimensional) domain decompositions.
+
 `benchmark-vsc3.job`, `benchmark-vsc3plus.job`, and `benchmark-vsc4.job` are job files already configured
 for the three different architectures.
 Both _intranode_ and _internode_ types of scaling can be benchmarked using `benchmark-general.sh` which is
