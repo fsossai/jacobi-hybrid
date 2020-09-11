@@ -111,6 +111,8 @@ Cores per socket:       10
 Threads per core:       2
 ```
 
+These details have been obtained using `likwid-topology` (RRZE-HPC/likwid)[https://github.com/RRZE-HPC/likwid]
+
 ## Acknoledgements
 
 This project has been developed during my participation to [PRACE Summer of HPC](https://summerofhpc.prace-ri.eu/info/) 2020.
