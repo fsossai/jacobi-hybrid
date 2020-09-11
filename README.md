@@ -114,7 +114,7 @@ Threads per core:       2
 ## Acknoledgements
 
 This project has been developed during my participation to [PRACE Summer of HPC](https://summerofhpc.prace-ri.eu/info/) 2020.
-I would like to thank [Claudia Blaas-Schenner](https://tiss.tuwien.ac.at/fpl/person/index.xhtml?cid=1), [Irene Reichl](https://tiss.tuwien.ac.at/fpl/person/index.xhtml?id=106886) and [David Fischak](linkedin.com/in/davidfischak) for their support.
+I would like to thank [Claudia Blaas-Schenner](https://tiss.tuwien.ac.at/fpl/person/index.xhtml?id=106891), [Irene Reichl](https://tiss.tuwien.ac.at/fpl/person/index.xhtml?id=106886) and [David Fischak](https://linkedin.com/in/davidfischak) for their support.
 I'm also thankful to [PRACE](https://prace-ri.eu/), [VSC](https://vsc.ac.at/) and [TU Wien](https://www.tuwien.at/) for giving me
 this opportunity.
 
