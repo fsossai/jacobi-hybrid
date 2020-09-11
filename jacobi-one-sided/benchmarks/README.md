@@ -31,8 +31,17 @@ This shell scripts are thought to be modular and flexible. The rightmost files a
 ```
 
 ### Examples
-To submit to the [Slurm workload manager](https://slurm.schedmd.com/documentation.html) an internode scaling benchmark on VSC4:
-```sbatch benchmark-vsc4.job intranode```
+
+Once you compiled _jacobi2d.x_ and _jacobi3.x_ (see previous directory), remember to give the permission
+to be run to the shell scripts:
+```
+chmod +x *.sh
+```
+
+To submit to the [Slurm workload manager](https://slurm.schedmd.com/documentation.html) an intranode scaling benchmark on VSC4:
+```
+sbatch benchmark-vsc4.job intranode strong
+```
 
 The job will produce a set of files in a csv and table format:
 ```
